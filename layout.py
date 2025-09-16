@@ -1,4 +1,5 @@
 import arcade
+from arcade.sections import SectionManager
 from panels.base_panel import BasePanel
 
 # -------------------------------
@@ -22,19 +23,22 @@ class LayoutView(arcade.View):
     def __init__(self, panels: list[BasePanel]):
         super().__init__()
         self.panels = panels
+        self.section_manager = SectionManager(self)
+        for p in self.panels:
+            self.section_manager.add_section(p)
 
     # -- Dessin
     def on_show_view(self):
         arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
+        self.section_manager.enable()
 
     def on_draw(self):
         self.clear()
-        for p in self.panels:
-            p.draw()
+        # Le SectionManager intercepte et dessine les sections
 
     def on_update(self, delta_time: float):
-        for p in self.panels:
-            p.update(delta_time)
+        # Le SectionManager gère les updates des sections
+        pass
 
 
 # -------------------------------

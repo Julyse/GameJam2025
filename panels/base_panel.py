@@ -1,32 +1,28 @@
-from dataclasses import dataclass
 import arcade
+from arcade.sections import Section
 
 
-@dataclass
-class BasePanel:
-    x: int
-    y: int
-    width: int
-    height: int
-    color: arcade.color
-    label: str
+class BasePanel(Section):
+    def __init__(self, x: int, y: int, width: int, height: int, *, color: arcade.color, label: str):
+        super().__init__(x, y, width, height, name=label)
+        self.color = color
+        self.label = label
 
-    def update(self, delta_time: float) -> None:
-        # Méthode à surcharger par chaque panel
+    def on_update(self, delta_time: float) -> None:
         pass
 
-    def draw(self) -> None:
+    def on_draw(self) -> None:
         arcade.draw_lrbt_rectangle_filled(
-            self.x,
-            self.x + self.width,
-            self.y,
-            self.y + self.height,
+            self.left,
+            self.right,
+            self.bottom,
+            self.top,
             self.color,
         )
         arcade.draw_text(
             self.label,
-            self.x + 20,
-            self.y + self.height // 2 - 12,
+            self.left + 20,
+            self.bottom + (self.height // 2) - 12,
             arcade.color.WHITE,
             20,
         )
