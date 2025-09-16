@@ -1,7 +1,7 @@
 import arcade
 
 #import mini jeu
-from mini_games.valve import ValveGame 
+from mini_games.mystery_box import MysteryBoxGame
 
 #Constantes
 SCREEN_WIDTH = 1280
@@ -19,12 +19,14 @@ class Game(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
         self.current_state = GameState.MENU
         
-        self.minigames = [ValveGame,] #mini jeu disponible 
+        self.minigames = [MysteryBoxGame,] #mini jeu disponible 
         
         self.current_minigame = None # mini jeu en cours
         
     def setup(self):
-        pass 
+        # Démarrer directement le mini-jeu MysteryBox
+        self.current_minigame = MysteryBoxGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        self.show_view(self.current_minigame)
 
     def on_draw(self):
         pass  
