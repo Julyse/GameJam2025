@@ -2,27 +2,37 @@ from .base_panel import BasePanel
 import arcade
 from arcade import Sprite, SpriteList, color, draw_text
 from math import pi
-from random import random, gauss
+from random import random, gauss, uniform
 
 
 class BigPanel(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
-        super().__init__(x=x, y=y, width=width, height=height, color=arcade.color.AIR_FORCE_BLUE, label="Grand écran")
+        super().__init__(x=x, y=y, width=width, height=height, color=arcade.color.BEIGE, label="")
 
         # --- Contenu "Arena" embarqué ---
         self.sprites = SpriteList()
 
-        center_x = self.left + self.width / 2
-        center_y = self.bottom + self.height / 2
-
         self.knight = Sprite()
-        self.knight.position = (center_x, center_y + center_y / 2)
-
         self.drake = Sprite()
-        self.drake.position = (center_x, center_y / 2)
+        self.sword = Sprite()
+
+        center_x = self.width / 2 + x
+        center_y = self.height / 2 + y
+
+        padding = uniform(200, 350)
+
+        self.knight.position = (center_x - padding, center_y)
+        self.drake.position = (center_x + padding, center_y)
+        self.sword.position = (center_x - padding + 100, center_y + 20)
+        
+        self.sword.width /= 4
+        self.drake.width += 200
+
+        self.sword.angle = 40
 
         self.sprites.append(self.knight)
         self.sprites.append(self.drake)
+        self.sprites.append(self.sword)
 
         # Décors
         self.n_dec = 30
