@@ -2,6 +2,7 @@ import arcade
 
 #import mini jeu
 from mini_games.valve import ValveGame 
+from fight.arena import Arena
 
 #Constantes
 SCREEN_WIDTH = 1280
@@ -19,9 +20,10 @@ class Game(arcade.Window):
         super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
         self.current_state = GameState.MENU
         
-        self.minigames = [ValveGame,] #mini jeu disponible 
+        self.minigames = [ValveGame] #mini jeu disponible 
         
-        self.current_minigame = None # mini jeu en cours
+        self.current_minigame = Arena # mini jeu en cours
+        self.show_view(self.current_minigame())
         
     def setup(self):
         pass 
