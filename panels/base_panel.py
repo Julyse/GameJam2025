@@ -10,13 +10,10 @@ class BasePanel:
     height: int
     color: arcade.color
     label: str
-    speed: float = 1.0
-
-    # runtime
-    incrementer: float = 0.0
 
     def update(self, delta_time: float) -> None:
-        self.incrementer += self.speed * delta_time
+        # Méthode à surcharger par chaque panel
+        pass
 
     def draw(self) -> None:
         arcade.draw_lrbt_rectangle_filled(
@@ -32,12 +29,5 @@ class BasePanel:
             self.y + self.height // 2 - 12,
             arcade.color.WHITE,
             20,
-        )
-        arcade.draw_text(
-            f"{self.incrementer:.2f}",
-            self.x + 20,
-            self.y + 12,
-            arcade.color.WHITE,
-            16,
         )
 
