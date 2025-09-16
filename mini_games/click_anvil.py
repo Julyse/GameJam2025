@@ -16,7 +16,7 @@ class AnvilGame(View):
 
         self.background_color = color.BLACK_BEAN
 
-        pass
+        # sprites...
     
     def setup(self):
         """ Configuration du mini jeu """
