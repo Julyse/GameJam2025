@@ -1,6 +1,6 @@
-
 START_DIALOGUES = [
-    "Bonjour, ceci est un test.",
-    "Un heros doit vaincre le mechant dragon bouhh.",
-    "A vous de l'aider etc.",
+    "Le heros combat, mais ton nom ne sera jamais chante.",
+    "Sans ton marteau, sa legende ne verrait jamais le jour.",
+    "Prends ton marteau avant que la bataille se perde.",
+
 ]

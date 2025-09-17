@@ -14,7 +14,7 @@ class MessageBox:
         characters_per_second: float = 20.0,
         font_path: str | None = None,
         font_name: str = "Righteous",
-        font_size: int = 14,
+        font_size: int = 12,
         padding: int = 16,
         background_color: arcade.color = arcade.color.DARK_SLATE_GRAY,
         border_color: arcade.color = arcade.color.LIGHT_GRAY,
