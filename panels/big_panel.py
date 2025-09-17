@@ -79,6 +79,29 @@ class BigPanel(BasePanel):
         self.drake.multiply_scale(2)
         self.sword.angle = 40
 
+        self.d_healthbar = Sprite()
+        self.k_healthbar = Sprite()
+        self._healthbar = [x for x in (Path(__file__).parent.parent / "resources" / "Healthbar").iterdir()]
+        self._healthbar.sort()
+        self._healthbar.reverse()
+
+        self.max_k_lives = self.k_lives
+        self.max_d_lives = self.d_lives
+
+        for g in self._healthbar:
+            tex = load_texture(g)
+            self.d_healthbar.textures.append(tex)
+            self.k_healthbar.textures.append(tex)
+
+        self.d_healthbar.position = (float(self.width - self.width / 4), self.height - 175)        
+        self.k_healthbar.position = (float(self.width / 4), self.height - 175 )        
+
+        self.k_healthbar.multiply_scale(1.5)
+        self.d_healthbar.multiply_scale(1.5)
+
+        self.k_healthbar.set_texture(len(self.k_healthbar.textures) - 1)
+        self.d_healthbar.set_texture(len(self.d_healthbar.textures) - 1)
+
         self._init_knight_gifs()
         self.bg_tex = load_texture(
             Path(__file__).parent.parent / "resources" / "main_bg.png"
@@ -87,7 +110,6 @@ class BigPanel(BasePanel):
         self.n_dec = 20
 
         x_normal = [gauss(self.width / 2, self.width / 2) for _ in range(self.n_dec)]
-        #y_normal = [gauss(self.height / 3, self.height / 2) for _ in range(self.n_dec)]
         y_normal = linspace(0, self.width, self.n_dec)
 
         self.decorations = SpriteList()
@@ -95,8 +117,7 @@ class BigPanel(BasePanel):
 
         decorations_text = [x for x in (Path(__file__).parent.parent / "resources" / "Props").iterdir() if x.name != "misc_scenery.png"]
         bats_text = [x for x in (Path(__file__).parent.parent / "resources" / "Entities" / "Bats").iterdir()]
-        print(decorations_text)
-
+        
         for i in range(int(self.n_dec)):
             dec = Sprite(path_or_texture=choice(decorations_text))
             dec.angle = 2 * pi * random()
@@ -107,12 +128,19 @@ class BigPanel(BasePanel):
             dec = Sprite(path_or_texture=choice(bats_text))
             dec.angle = 2 * pi * random()
             dec.scale = uniform(1.25, 2.1)
-            dec.position = (self.left + x_normal[int(i + self.n_dec / 2)], self.bottom + y_normal[int(i + self.n_dec / 2)])
+            dec.base_x = self.left + x_normal[int(i + self.n_dec / 2)]
+            dec.base_y = self.bottom + y_normal[int(i + self.n_dec / 2)]
+            dec.freq_x = uniform(0.5, 1.5)
+            dec.freq_y = uniform(0.5, 1.5)
+            dec.phase_x = uniform(0, 2 * pi)
+            dec.phase_y = uniform(0, 2 * pi)
+            dec.center_x, dec.center_y = dec.base_x, dec.base_y
             self.bats.append(dec)
-        
 
         self.sprites.append(self.drake)
         self.sprites.append(self.fireball)
+        self.sprites.append(self.d_healthbar)
+        self.sprites.append(self.k_healthbar)
 
         self.dt = 0.0
         self.curr = 0
@@ -134,6 +162,13 @@ class BigPanel(BasePanel):
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
         draw_texture_rect(self.bg_tex, self.rect)
+        
+        k_index = int((self.k_lives / self.max_k_lives) * (len(self.k_healthbar.textures) - 1))
+        d_index = int((self.d_lives / self.max_d_lives) * (len(self.d_healthbar.textures) - 1))
+        k_index = max(0, min(k_index, len(self.k_healthbar.textures) - 1))
+        d_index = max(0, min(d_index, len(self.d_healthbar.textures) - 1))
+        self.k_healthbar.set_texture(k_index)
+        self.d_healthbar.set_texture(d_index)
 
         self.decorations.draw()
         self.bats.draw()
@@ -146,7 +181,6 @@ class BigPanel(BasePanel):
 
         if self.s_lives <= 0:
             draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
-            self.knight.set_texture(1)
             msg_y -= 25
         if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
             draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
@@ -162,9 +196,7 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent
             / "resources/knight/Colour1/Outline/120x80_gifs"
         )
-
         L = lambda n: load_animated_gif(base / n)
-
         self.k_gifs = {
             SpriteState.STANDBY: L("__Idle.gif"),
             SpriteState.ATTACKING: L("__Attack.gif"),
@@ -174,10 +206,8 @@ class BigPanel(BasePanel):
         }
         for g in self.k_gifs.values():
             g.multiply_scale(4)
-
             g.center_x, g.center_y = self.knight.center_x, self.knight.center_y
             g.visible = False
-
             self.sprites.append(g)
         self._apply_knight_gif()
 
@@ -285,22 +315,14 @@ class BigPanel(BasePanel):
                 self.k_gifs[self.k_state].update_animation(delta_time)
             return
 
-
-            # randomly shuffle positions of the decoration
-        if random() < .4:
-            for dec in self.bats:
-                base_x, base_y = dec.position
-                offset_x = (
-                    sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
-                )
-                offset_y = (
-                    cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
-                )
-                new_x = base_x + offset_x
-                new_y = base_y + offset_y
-                new_x = min(max(new_x, self.left), self.right)
-                new_y = min(max(new_y, self.bottom), self.top)
-                dec.center_x, dec.center_y = new_x, new_y
+        for bat in self.bats:
+            offset_x = sin(self.dt * bat.freq_x + bat.phase_x) * 5
+            offset_y = cos(self.dt * bat.freq_y + bat.phase_y) * 3
+            new_x = bat.base_x + offset_x
+            new_y = bat.base_y + offset_y
+            new_x = min(max(new_x, self.left), self.right)
+            new_y = min(max(new_y, self.bottom), self.top)
+            bat.center_x, bat.center_y = new_x, new_y
 
         if self.attacking:
             self._tick_attack_anim()
@@ -312,9 +334,6 @@ class BigPanel(BasePanel):
         self._sync_knight_gif_pos()
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
-
-        # Draw life bar
-        
 
     def act(self):
         if self.k_lives <= 0:
