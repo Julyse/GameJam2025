@@ -6,13 +6,14 @@ from enums.minigames_status import GameStatus
 from mini_games.undertale import Undertale
 
 class SmallPanel2(BasePanel):
-    def __init__(self, x: int, y: int, width: int, height: int): #DragonState
+    def __init__(self, x: int, y: int, width: int, height: int, *, big_panel_ref=None): #DragonState
         super().__init__(x=x, y=y, width=width, height=height,
                          color=arcade.color.SKY_BLUE, label="Flappy")
 
         self.game = None
         self.last_result: GameStatus | None = None
         self._next_is_undertale = True
+        self.big_panel_ref = big_panel_ref  # Reference to BigPanel for adding swords
         self.start_next_minigame()
 
     def start_undertale(self):
@@ -34,6 +35,11 @@ class SmallPanel2(BasePanel):
         # Stop rendering the minigame and show result on panel
         self.last_result = status
         self.game = None
+        
+        # Award sword if mini-game won
+        if status == GameStatus.WIN and self.big_panel_ref and hasattr(self.big_panel_ref, 'encounter'):
+            self.big_panel_ref.encounter.add_sword(1)
+            print("🎉 Mini-game won! Sword added to inventory!")
 
 
     def on_update(self, delta_time: float):
