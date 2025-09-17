@@ -32,6 +32,7 @@ class Character(Sprite):
 
 class BigPanel(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
+
         super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
 
         self.sprites = SpriteList()
@@ -110,7 +111,7 @@ class BigPanel(BasePanel):
 
     def on_draw(self) -> None:
         super().on_draw()
-        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK)
+        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
         draw_texture_rect(self.bg_tex, self.rect)
 
         self.decorations.draw()

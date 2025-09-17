@@ -126,12 +126,14 @@ class FlappyGame:
                                               sy(REF_HEIGHT-top_h), sy(REF_HEIGHT), self.pipe_color)
         # score
         arcade.draw_text(f"Score : {self.score}", offset_x+20, offset_y+self.panel_h-60,
-                         arcade.color.WHITE, FONT_SIZE*self.scale*0.6)
+                         arcade.color.WHITE, FONT_SIZE*self.scale*0.6,
+                         font_name=("Righteous", "arial", "calibri"))
         if self.game_over or self.victory:
             msg = "Vous avez gagné" if self.victory else "Game Over"
             arcade.draw_text(msg, offset_x+self.panel_w/2, offset_y+self.panel_h/2,
                              arcade.color.BLACK, FONT_SIZE*self.scale,
-                             anchor_x="center", anchor_y="center")
+                             anchor_x="center", anchor_y="center",
+                             font_name=("Righteous", "arial", "calibri"))
 
     # ----------------------- input -----------------------
     def on_key_press(self, key, _mods):

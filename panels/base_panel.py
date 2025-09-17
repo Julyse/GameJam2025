@@ -25,5 +25,6 @@ class BasePanel(Section):
             self.bottom + (self.height // 2) - 12,
             arcade.color.WHITE,
             20,
+            font_name=("Righteous", "arial", "calibri"),
         )
 
