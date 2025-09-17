@@ -1,8 +1,17 @@
 import arcade
 import os
 from enum import Enum
+# from .enums.dragon_state import DragonState
+class DragonState(Enum):
+    ICE = 'ice'
+    FIRE = 'fire'
+    NORMAL = 'normal'
 
 DEBUG_SHOW_HITBOX = True
+INVICIBILITY_TILE = 1.5 # IN SECONDS
+MOVEMENT_SPEED = 6
+HITBOX_HEIGHT = 20
+HITBOX_WIDTH = 20
 
 # to be moved and used by everyone, same for dragon mode
 class GameStatus(Enum):
@@ -10,23 +19,10 @@ class GameStatus(Enum):
     WIN = 2
     LOST = 3
 
-SPRITE_SCALING = 0.5
-SCREEN_WIDTH = 720
-SCREEN_HEIGHT = 325
-SCREEN_TITLE = "temp"
-MOVEMENT_SPEED = 6
-TILE_WIDTH = SCREEN_WIDTH / 10
-TILE_HEIGHT = SCREEN_HEIGHT / 5
-
-INVICIBILITY_TIME = 1.5 # IN SECONDS
-
-HITBOX_HEIGHT = 20
-HITBOX_WIDTH = 20
-
 class Player(arcade.Sprite):
     """ Player Class """
 
-    def update(self, delta_time: float = 1/60):
+    def update(self, screen_width, screen_height, delta_time: float = 1/60):
         """ Move the player """
         # Move player.
         self.center_x += self.change_x
@@ -35,15 +31,15 @@ class Player(arcade.Sprite):
         # Check for out-of-bounds
         if self.left < 0:
             self.left = 0
-        elif self.right > SCREEN_WIDTH - 1:
-            self.right = SCREEN_WIDTH - 1
+        elif self.right > screen_width - 1:
+            self.right = screen_width - 1
 
         if self.bottom < 0:
             self.bottom = 0
-        elif self.top > SCREEN_HEIGHT - 1:
-            self.top = SCREEN_HEIGHT - 1
+        elif self.top > screen_height - 1:
+            self.top = screen_height - 1
 
-class MyGame(arcade.Window):
+class Undertale:
     """
     Load MAP
     """
@@ -80,51 +76,65 @@ class MyGame(arcade.Window):
             grid.append([int(ch) for ch in line])
         return grid
 
+    def check_win_condition(self):
+        """
+        If all walls have scrolled past the left side of the screen, declare WIN.
+        """
+        # Only consider walls that are still on or past the left edge
+        if all(wall.right < 0 for wall in self.wall_list):
+            self.game_status = GameStatus.WIN
+            print("You won!")
+            arcade.close_window()
+
 
     """
     Main application class.
     """
-    def __init__(self, width, height, title, gamemode):
+    def __init__(self, width, height, gamemode: DragonState):
         """
         Initializer
         """
         # Call the parent class initializer
-        super().__init__(width, height, title)
+        #super().__init__(width, height, title)        
+        self.screen_width = width #720
+        self.screen_height = height #325
+        
+        self.tile_width = self.screen_width / 10
+        self.tile_height = self.screen_height / 5
+
+        self.sprite_scaling = 0.5 #to =_determine form width and height
 
         self.game_status = GameStatus.ONGOING
 
-        # Variables that will hold sprite lists
-        # self.player_list = None 
-        # Set up the player info
-        self.player_sprite = None
-        self.player_hitbox = None
-        self.hitbox_list = None
-        # To be replaced with the image
-        self.background = None
-
-        # Track the current state of what key is pressed
         self.left_pressed = False
         self.right_pressed = False
         self.up_pressed = False
         self.down_pressed = False
 
+
+        self.gamemode = gamemode
         # to-do switch gamemode for scrolling speed ....
-        self.scroll_speed_x = -1
-        self.scroll_speed_y = 0
+        match gamemode:
+            case DragonState.NORMAL:
+                self.scroll_speed_x = -1
+                self.scroll_speed_y = 0
+            case DragonState.FIRE:
+                self.scroll_speed_x = -2
+                self.scroll_speed_y = 0
+            case DragonState.ICE:
+                print("todo")
+                # @to-do
 
         #should maybe be in player class
         self.lifepoints = 3
-        self.invincible = False; 
+        self.invincible = False;
 
-        self.fire_list = None
-
-    def setup(self):
         """ Set up the game and initialize the variables. """
         # Sprite lists
         self.player_list = arcade.SpriteList()
         # Set up the player
         self.player_sprite = Player(":resources:images/animated_characters/female_person/"
-                                    "femalePerson_idle.png", SPRITE_SCALING)
+                                    "femalePerson_idle.png", self.sprite_scaling)
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
 
@@ -132,11 +142,15 @@ class MyGame(arcade.Window):
 
         BASE_PATH = os.path.dirname(os.path.abspath(__file__))  # folder where THIS script is located
         RESOURCE_PATH = os.path.join(BASE_PATH, "..", "resources", "undertale")  # go up one folder
-        # self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg.png"))
-        self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg_fire.png"))
 
-        print(self.get_resource_path("bg.png"))
-        print(os.path.exists(self.get_resource_path("bg.png")))
+        print('GAMEMODE IS :', self.gamemode)
+        match self.gamemode:
+            case DragonState.NORMAL:
+                self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg.png"))
+            case DragonState.FIRE:
+                self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg_fire.png"))
+            case DragonState.ICE:
+                self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg_ice.png"))
 
         self.player_hitbox = arcade.SpriteSolidColor(
             width=HITBOX_WIDTH,  # smaller than your player sprite
@@ -148,60 +162,57 @@ class MyGame(arcade.Window):
         self.hitbox_list = arcade.SpriteList()
         self.hitbox_list.append(self.player_hitbox)
 
-        level_data = self.load_text_file("map_1")
+        level_data = self.load_text_file("map_normal_0")
         level_grid = self.load_level_as_grid(level_data)
-
 
         # fire_sprite_template = arcade.load_animated_gif(self.get_resource_path("fire.gif"))
         # fire_sprite_template.scale = FIRE_SCALING
 
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
-        self.fire_list = arcade.SpriteList(use_spatial_hash=True)
         for row_index, row in enumerate(level_grid):
             for col_index, tile in enumerate(row):
                 if tile == 1:
-                    # maybe we should define spritesolidcolr outsite
-                    wall = arcade.SpriteSolidColor(
-                        width=TILE_WIDTH,
-                        height=TILE_HEIGHT,
-                        # color=(255, 255, 255, 255)
-                        color=(255, 0, 0, 255)
-                    )
+                    center_x = col_index * self.tile_width + self.tile_width / 2
+                    center_y = (len(level_grid) - row_index - 1) * self.tile_height + self.tile_height / 2
 
-                    wall.center_x = col_index * TILE_WIDTH + TILE_WIDTH / 2
-                    wall.center_y = (len(level_grid) - row_index - 1) * TILE_HEIGHT + TILE_HEIGHT / 2
-
-                    self.wall_list.append(wall)
-
-
-                    #PATH CAN ALSO BE Pathlib.Path
+                    match self.gamemode:
+                        case DragonState.NORMAL:
+                            # maybe we should define spritesolidcolr outsite
+                            wall = arcade.SpriteSolidColor(
+                                width=self.tile_width,
+                                height=self.tile_height,
+                                # color=(255, 255, 255, 255)
+                                color=(255, 255, 255, 255)
+                            )
+                            wall.center_x = center_x
+                            wall.center_y = center_y
+                            self.wall_list.append(wall)
+                        case DragonState.FIRE:
+                            #PATH CAN ALSO BE Pathlib.Path
+                            #maybe define outside
+                            wall = arcade.load_animated_gif(self.get_resource_path("lava.gif"))
+                            wall.width *= self.tile_width / 32 
+                            wall.height *= self.tile_height / 32 
+                            wall.center_x = center_x
+                            wall.center_y = center_y
+                            self.wall_list.append(wall)
+                        case DragonState.ICE:
+                            print("todo")
                     
-                    fire_wall = arcade.load_animated_gif(self.get_resource_path("lava.gif"))
-                    fire_wall.width *= TILE_WIDTH / 32 
-                    fire_wall.height *= TILE_HEIGHT / 32 
 
-                                        
-                    fire_wall.center_x = wall.center_x
-                    fire_wall.center_y = wall.center_y
-
-                    self.fire_list.append(fire_wall)
-        #load_level
-        # print(level_grid)
-
-    def on_draw(self):
+    def draw(self, offset_x: float = 0, offset_y: float = 0):
         """
         Render the screen.
         """
         # This command has to happen before we start drawing
-        self.clear()
+        # self.clear()
 
         arcade.draw_texture_rect(
             self.background,
-            arcade.LBWH(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
+            arcade.LBWH(offset_x, offset_y, self.screen_width, self.screen_height),
         )
 
         self.wall_list.draw() 
-        self.fire_list.draw()
         # Draw all the sprites.
         if not self.invincible or self.blink_state:
             self.player_list.draw()
@@ -232,6 +243,7 @@ class MyGame(arcade.Window):
 
         if (self.lifepoints - 1 < 0):
             self.game_status = GameStatus.LOST
+            arcade.close_window()
             # return ?
 
         self.lifepoints -= 1
@@ -239,7 +251,7 @@ class MyGame(arcade.Window):
 
         # Trigger invincibility period
         self.invincible = True
-        self.invincibility_timer = INVICIBILITY_TIME
+        self.invincibility_timer = INVICIBILITY_TILE
         self.blink_timer = 0.1          # start blink timer
         self.blink_state = False
 
@@ -265,11 +277,11 @@ class MyGame(arcade.Window):
                 self.invincible = False
                 self.player_sprite.alpha = 255  # fully visible again
 
-    def on_update(self, delta_time):
+    def update(self, delta_time):
         """ Movement and game logic """
 
         # Move the player
-        self.player_list.update(delta_time)
+        self.player_list.update(self.screen_width, self.screen_height, delta_time)
         self.player_hitbox.center_x = self.player_sprite.center_x
         self.player_hitbox.center_y = self.player_sprite.center_y
         
@@ -279,14 +291,14 @@ class MyGame(arcade.Window):
         # print(collision)
 
         #only if fire
-        self.fire_list.update_animation(delta_time)
-        for fire_wall in self.fire_list:
-            fire_wall.center_x += self.scroll_speed_x
-            fire_wall.center_y += self.scroll_speed_y
+        if self.gamemode == DragonState.FIRE:
+            self.wall_list.update_animation(delta_time)
 
         for wall in self.wall_list:
             wall.center_x += self.scroll_speed_x
             wall.center_y += self.scroll_speed_y
+
+        self.check_win_condition()
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -328,11 +340,11 @@ def change_scroll_direction(self, dx: float, dy: float):
 
 #self.change_scroll_direction(0, 2)
 
-def main():
-    """ Main function """
-    window = MyGame(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE, "Fire")
-    window.setup()
-    arcade.run()
+# def main():
+#     """ Main function """
+#     window = MyGame(self.screen_width, self.screen_height, SCREEN_TITLE, DragonState.FIRE)
+#     window.setup()
+#     arcade.run()
 
 if __name__ == "__main__":
     main()

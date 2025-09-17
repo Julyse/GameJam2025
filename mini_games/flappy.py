@@ -144,6 +144,9 @@ class FlappyGame:
                 self.started = True
             self.bird_velocity = self.flap_strength
 
+    def on_key_release():
+        pass
+
     # ----------------------- helper interne -----------------------
     def _spawn_pipe(self):
         margin = 60
