@@ -1,5 +1,6 @@
 import arcade
 import os
+from typing import Callable, Optional
 from enums.dragon_state import DragonState
 from enums.minigames_status import GameStatus
 
@@ -71,15 +72,13 @@ class Undertale:
         If all walls have scrolled past the left side of the screen, declare WIN.
         """
         if len(self.wall_list) == 0 or all(wall.right < 0 for wall in self.wall_list):
-            self.game_status = GameStatus.WIN
-            print("You won!")
-            arcade.exit()
+            self.finish(GameStatus.WIN)
 
 
     """
     Main application class.
     """
-    def __init__(self, width, height, gamemode: DragonState):
+    def __init__(self, width, height, gamemode: DragonState, on_finish: Optional[Callable[[GameStatus], None]] = None):
         """
         Initializer
         """      
@@ -92,6 +91,8 @@ class Undertale:
         self.sprite_scaling = 0.5
 
         self.game_status = GameStatus.ONGOING
+        self.finished = False
+        self.on_finish = on_finish
 
         self.left_pressed = False
         self.right_pressed = False
@@ -263,8 +264,7 @@ class Undertale:
         """Called whenever the player takes a hit."""
 
         if (self.lifepoints - 1 < 0):
-            self.game_status = GameStatus.LOST
-            arcade.exit()
+            self.finish(GameStatus.LOST)
 
         self.lifepoints -= 1
         print(f"Player hit! Lifepoints: {self.lifepoints}")
@@ -295,6 +295,10 @@ class Undertale:
 
     def update(self, delta_time):
         """ Movement and game logic """
+        # Stop all logic if finished
+        if self.finished:
+            return
+
         # If the player hasn't pressed a movement key yet, do not run the gameplay loop.
         # Still allow drawing to show the static screen; no walls move, no collisions processed.
         if not self.started:
@@ -327,6 +331,22 @@ class Undertale:
             self.wall_list.remove(wall)
 
         self.check_win_condition()
+
+    def finish(self, status: GameStatus):
+        """Mark the game as finished and notify listener without closing the window."""
+        if self.finished:
+            return
+        self.game_status = status
+        self.finished = True
+        self.started = False
+        self.scroll_speed_x = 0
+        self.scroll_speed_y = 0
+        try:
+            if self.on_finish is not None:
+                self.on_finish(status)
+        except Exception as exc:
+            # Avoid crashing the game loop due to callback errors
+            print(f"Error in on_finish callback: {exc}")
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """

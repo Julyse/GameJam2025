@@ -2,8 +2,10 @@ import arcade
 import os
 import random
 from enum import Enum
-from enums.dragon_state import DragonState
 from pathlib import Path
+from typing import Callable, Optional
+from enums.dragon_state import DragonState
+from enums.minigames_status import GameStatus
 
 # ---------- Dimensions de référence (monde logique) ----------
 REF_WIDTH  = 1280
@@ -32,7 +34,7 @@ PALETTES = {
 class FlappyGame:
     """Mini-jeu Flappy Bird intégrable dans un panneau Arcade."""
 
-    def __init__(self, width: int, height: int, *, mode: DragonState = DragonState.NORMAL):
+    def __init__(self, width: int, height: int, *, mode: DragonState = DragonState.NORMAL, on_finish: Optional[Callable[[GameStatus], None]] = None):
         # dimensions du panel hôte
         self.panel_w = width
         self.panel_h = height
@@ -47,6 +49,8 @@ class FlappyGame:
         self.pipe_color       = pipe_col
         self.bird_color       = arcade.color.WHITE
         self.mode = mode
+        self.on_finish = on_finish
+        self.finished = False
 
         # Gamemode pour correspondre à DragonState
         if mode == DragonState.FIRE:
@@ -78,7 +82,7 @@ class FlappyGame:
 
     # ----------------------- boucle -----------------------
     def update(self, dt: float):
-        if self.game_over or self.victory or not self.started:
+        if self.finished or self.game_over or self.victory or not self.started:
             return
 
         # physique oiseau
@@ -184,8 +188,15 @@ class FlappyGame:
                     return True
         return False
 
-    def _end_game(self): self.game_over=True
-    def _win_game(self): self.victory=True
+    def _end_game(self):
+        if not self.finished:
+            self.game_over = True
+            self.finish(GameStatus.LOST)
+
+    def _win_game(self):
+        if not self.finished:
+            self.victory = True
+            self.finish(GameStatus.WIN)
     def _reset(self):
         self.bird_y = REF_HEIGHT//2
         self.bird_velocity = 0
@@ -195,3 +206,16 @@ class FlappyGame:
         self.game_over = False
         self.victory = False
         self.started = False
+        self.finished = False
+
+    def finish(self, status: GameStatus):
+        """Marquer la fin du mini-jeu et notifier sans fermer la fenêtre."""
+        if self.finished:
+            return
+        self.finished = True
+        self.started = False
+        try:
+            if self.on_finish is not None:
+                self.on_finish(status)
+        except Exception as exc:
+            print(f"Error in Flappy on_finish callback: {exc}")
