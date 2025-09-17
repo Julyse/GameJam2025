@@ -155,8 +155,6 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
             frame_step=2,
         )
-        # Debug: activer pour jouer des explosions aléatoires
-        self.debug_explosions = False
 
     def on_draw(self) -> None:
         super().on_draw()
@@ -300,9 +298,6 @@ class BigPanel(BasePanel):
 
         # Mettre à jour les explosions
         self.update_explosions(delta_time)
-        # Debug: explosions aléatoires
-        if self.debug_explosions and random() < 0.01:
-            self.spawn_explosion(uniform(self.left, self.right), uniform(self.bottom, self.top))
 
         if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
             if self.attacking and self._attack_is_projectile:
