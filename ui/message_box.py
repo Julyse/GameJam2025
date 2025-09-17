@@ -21,6 +21,7 @@ class MessageBox:
         text_color: arcade.color = arcade.color.WHITE,
         border_width: int = 2,
         corner_radius: int = 8,
+        background_texture_path: str | None = None,
     ) -> None:
         self.x = x
         self.y = y
@@ -38,6 +39,7 @@ class MessageBox:
         self.text_color = text_color
         self.border_width = border_width
         self.corner_radius = corner_radius
+        self._background_texture = None
 
         # Gestion de la police: charge une police custom si fournie/existante
         self.font_size = font_size
@@ -59,6 +61,14 @@ class MessageBox:
         else:
             # Aucun fichier trouvé: utiliser le nom (peut retomber sur une police système)
             self._font_name = font_name or "Arial"
+
+        # Texture de fond optionnelle (affichée telle quelle, sans scaling)
+        if background_texture_path and os.path.isfile(background_texture_path):
+            try:
+                self._background_texture = arcade.load_texture(background_texture_path)
+                
+            except Exception:
+                self._background_texture = None
 
     # --- API publique ---
     def set_text(self, text: str, *, reset_speed: bool = True) -> None:
@@ -90,11 +100,20 @@ class MessageBox:
         top = bottom + self.height
 
         # Fond
-        arcade.draw_lrbt_rectangle_filled(
-            left, right, bottom, top, self.background_color
-        )
-        # Bordure
-        if self.border_width > 0:
+        if self._background_texture is not None:
+            # Dessiner l'image à sa taille nat0 au coin bas-gauche de la box
+
+            arcade.draw_texture_rect(
+                self._background_texture,
+                arcade.LBWH(left, bottom, self.width, self.height),
+            )
+
+        else:
+            arcade.draw_lrbt_rectangle_filled(
+                left, right, bottom, top, self.background_color
+            )
+        # Bordure (désactivée si on affiche une image de fond)
+        if self._background_texture is None and self.border_width > 0:
             arcade.draw_lrbt_rectangle_outline(
                 left,
                 right,

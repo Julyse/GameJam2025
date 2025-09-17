@@ -31,6 +31,7 @@ class CinematicView(arcade.View):
             y=box_y,
             width=box_width,
             height=box_height,
+            background_texture_path=None,
             text=self.messages[self.index],
             characters_per_second=cps,
             font_name="Righteous",
