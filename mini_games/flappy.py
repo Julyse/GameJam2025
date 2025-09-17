@@ -1,12 +1,15 @@
 import arcade
+import os
 import random
 from enum import Enum
+from enums.dragon_state import DragonState
+from pathlib import Path
 
 # ---------- Dimensions de référence (monde logique) ----------
 REF_WIDTH  = 1280
 REF_HEIGHT = 720
 
-# ---------- Constantes du jeu ----------
+#  Y'a toutes les Constantes du jeu au début si tu veux changer fait le ici ----------
 BIRD_X        = REF_WIDTH * 0.25
 BIRD_SIZE     = 35
 GRAVITY       = 1200
@@ -22,19 +25,19 @@ FONT_SIZE = 36
 
 class VisualMode(Enum):
     NORMAL = "normal"
-    LAVA   = "lava"
-    OCEAN  = "ocean"
+    FIRE   = "fire"
+    ICE    = "ice"
 
 PALETTES = {
-    VisualMode.NORMAL: (arcade.color.SKY_BLUE, arcade.color.GREEN),
-    VisualMode.LAVA:   (arcade.color.DARK_TANGERINE, arcade.color.DARK_RED),
-    VisualMode.OCEAN:  (arcade.color.SEA_BLUE, arcade.color.DARK_BLUE),
+    VisualMode.NORMAL: (arcade.color.SKY_BLUE, arcade.color.WHITE),
+    VisualMode.FIRE:   (arcade.color.DARK_TANGERINE, arcade.color.DARK_RED),
+    VisualMode.ICE:    (arcade.color.SEA_BLUE, arcade.color.DARK_BLUE),
 }
 
 BIRD_COLORS = {
     VisualMode.NORMAL: arcade.color.YELLOW_ORANGE,
-    VisualMode.LAVA:   arcade.color.BLACK,
-    VisualMode.OCEAN:  arcade.color.YELLOW_ORANGE,
+    VisualMode.FIRE:   arcade.color.BLACK,
+    VisualMode.ICE:    arcade.color.YELLOW_ORANGE,
 }
 
 class FlappyGame:
@@ -56,12 +59,30 @@ class FlappyGame:
         self.bird_color       = BIRD_COLORS[mode]
         self.mode = mode
 
+        # Gamemode pour correspondre à DragonState
+        if mode == VisualMode.FIRE:
+            self.gamemode = DragonState.FIRE
+        elif mode == VisualMode.ICE:
+            self.gamemode = DragonState.ICE
+        else:
+            self.gamemode = DragonState.NORMAL
+
+        # --- Background selon le mode ---
+        RESOURCE_PATH = Path(__file__).resolve().parents[1] / "ressources" / "images"
+        match self.gamemode:
+            case DragonState.NORMAL:
+                self.background = arcade.load_texture(str(RESOURCE_PATH / "bg.png"))
+            case DragonState.FIRE:
+                self.background = arcade.load_texture(str(RESOURCE_PATH / "bg_fire.png"))
+            case DragonState.ICE:
+                self.background = arcade.load_texture(str(RESOURCE_PATH / "bg_ice.png"))
+
         # vitesse ajustée
-        self.pipe_speed   = PIPE_SPEED * (2.5 if mode == VisualMode.LAVA else 1)
+        self.pipe_speed   = PIPE_SPEED * (2.5 if mode == VisualMode.FIRE else 1)
         # ajustement physique à l'échelle du panel
         self.gravity       = GRAVITY * self.scale
         self.flap_strength = FLAP_STRENGTH * self.scale
-        self.moving_pipes = (mode == VisualMode.OCEAN)
+        self.moving_pipes = (mode == VisualMode.ICE)
 
         self._reset()
         self.started = False
@@ -101,17 +122,16 @@ class FlappyGame:
 
     # ----------------------- rendu -----------------------
     def draw(self, *, offset_x: float = 0, offset_y: float = 0):
-        # fond du panel
-        arcade.draw_lrbt_rectangle_filled(
-            offset_x, offset_x + self.panel_w,
-            offset_y, offset_y + self.panel_h,
-            self.background_color,
+        # fond du panel via draw_texture_rect + LBWH
+        arcade.draw_texture_rect(
+            self.background,
+            arcade.LBWH(offset_x, offset_y, self.panel_w, self.panel_h),
         )
         s, mx, my = self.scale, self.margin_x, self.margin_y
         sx = lambda x: offset_x + mx + x * s
         sy = lambda y: offset_y + my + y * s
 
-        # oiseau
+        # oiseau (carré simple pour le moment)
         arcade.draw_lrbt_rectangle_filled(sx(BIRD_X-BIRD_SIZE/2), sx(BIRD_X+BIRD_SIZE/2),
                                           sy(self.bird_y-BIRD_SIZE/2), sy(self.bird_y+BIRD_SIZE/2),
                                           self.bird_color)
@@ -133,7 +153,7 @@ class FlappyGame:
                              arcade.color.BLACK, FONT_SIZE*self.scale,
                              anchor_x="center", anchor_y="center")
 
-    # ----------------------- input -----------------------
+  
     def on_key_press(self, key, _mods):
         if self.game_over or self.victory:
             if key == arcade.key.ESCAPE:
