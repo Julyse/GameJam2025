@@ -39,14 +39,14 @@ class CombatEncounter:
         
     def reset(self):
         """Reset encounter state"""
-        self.dragon_hp = 20  # Dragon needs 20 hits to die
-        self.hero_hp = 10    # Hero dies after 10 dragon hits
+        self.dragon_hp = 60  # Dragon needs 20 hits to die
+        self.hero_hp = 50    # Hero dies after 10 dragon hits
         self.running = False
         self.finished = False
         self.result = None  # "victory", "defeat", or None
         
         # Sword inventory system
-        self.sword_inventory = [3]  # Start with 1 sword, durability 3
+        self.sword_inventory = [10]  # Start with 1 sword, durability 3
         
         # Random scheduler (no fixed queue)
         self.action_timer = 0.0
@@ -69,7 +69,7 @@ class CombatEncounter:
     def add_sword(self, count=1):
         """Add sword(s) to inventory - called by mini-games on success"""
         for _ in range(count):
-            self.sword_inventory.append(3)  # Each sword has 3 durability
+            self.sword_inventory.append(5)  # Each sword has 3 durability
         print(f"⚔️ Added {count} sword(s)! Total swords: {len(self.sword_inventory)}")
         
     def _has_usable_sword(self):
@@ -223,8 +223,11 @@ class CombatEncounter:
         # Check if hero has no more swords and dragon still alive
         elif not self._has_usable_sword() and self.dragon_hp > 0:
             print("💔 Hero has no more swords - defeat!")
-            self._on_hero_death()
+            self.panel.k_state = SpriteState.DEAD
+            self.panel._apply_knight_gif()
             
+            self._end_encounter("defeat_sword")
+
     def _on_hero_death(self):
         """Handle hero death"""
         print("💀 Hero has fallen!")
@@ -266,12 +269,18 @@ class CombatEncounter:
                 
     def draw_hud(self, panel):
         """Draw HP bars and combat info"""
-        # Sword inventory
+        # Sword inventory (show count from SwordStacking if available)
         hp_y = panel.bottom + panel.height - 40
-        sword_text = f"Swords: {len(self.sword_inventory)}"
-        if self.sword_inventory:
-            durabilities = [str(d) for d in self.sword_inventory]
-            sword_text += f" [{','.join(durabilities)}]"
+        sword_count = None
+        try:
+            if hasattr(panel, "sword_panel_ref") and panel.sword_panel_ref and hasattr(panel.sword_panel_ref, "game"):
+                stack = panel.sword_panel_ref.game
+                sword_count = stack.get_sword_count() if hasattr(stack, "get_sword_count") else len(getattr(stack, "sprite_list", []))
+        except Exception:
+            sword_count = None
+        if sword_count is None:
+            sword_count = len(self.sword_inventory)
+        sword_text = f"Swords: {sword_count}"
         draw_text(sword_text, panel.left + 400, hp_y,
                  color.YELLOW, 16, font_name=("Righteous", "arial", "calibri"))
         
@@ -298,7 +307,15 @@ class CombatEncounter:
             draw_text("La bataille est perdue...", center_x, center_y - 60,
                      color.RED, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
-                     
+
+        elif self.result == "defeat_sword":
+            draw_text("GAME OVER", center_x, center_y,
+                     color.RED, 48, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+            draw_text("Vous n'avez pas fabrique assez d'epee", center_x, center_y - 60,
+                     color.RED, 18, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+
         elif self.result == "victory":
             draw_text("VICTORY", center_x, center_y,
                      color.GREEN, 48, anchor_x="center", anchor_y="center", 
@@ -448,6 +465,8 @@ class BigPanel(BasePanel):
         self.encounter = CombatEncounter(self)
         # Auto-start combat after a brief delay
         self.encounter_start_timer = 2.0  # Start combat after 2 seconds
+        # Reference to SwordStacking (SmallPanel3); set by controller
+        self.sword_panel_ref = None
     def _setup_mode_visuals(self):
         """Configure visual elements based on combat mode."""
         match self.combat_mode:

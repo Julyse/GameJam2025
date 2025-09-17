@@ -38,16 +38,16 @@ class MenuView(arcade.View):
         quit_button = QuitButton(text="Quitter", width=220, style=righteous_style)
 
         v_box.add(start_button)
-        v_box.add(options_button)
+        # v_box.add(options_button)
         v_box.add(quit_button)
 
         @start_button.event("on_click")
         def on_click_start(event):
             self.start_cinematic()
 
-        @options_button.event("on_click")
-        def on_click_options(event):
-            print("Options…")
+        # @options_button.event("on_click")
+        # def on_click_options(event):
+        #     print("Options…")
 
         anchor = arcade.gui.widgets.layout.UIAnchorLayout()
         anchor.add(child=v_box, anchor_x="center_x", anchor_y="center_y")
