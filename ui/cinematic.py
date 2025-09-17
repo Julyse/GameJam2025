@@ -30,8 +30,6 @@ class CinematicView(arcade.View):
             background_texture_path=None,
             text=self.messages[self.index],
             characters_per_second=cps,
-            font_name="Righteous",
-            font_size=22,
         )
 
     def on_show_view(self):
