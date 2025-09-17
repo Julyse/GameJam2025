@@ -1,41 +1,36 @@
 import arcade
-
-#import mini jeu
-from mini_games.valve import ValveGame 
-
-#Constantes
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
-SCREEN_TITLE = "Forgeron du donjon"
-
-class GameState:
-    DIALOGUE = "dialogue"
-    MENU = "menu"
-    MINIGAME = "minigame"
+from panels import BigPanel, SmallPanel1, SmallPanel2, SmallPanel3
+from panels.base_panel import BasePanel
+from layout import LayoutView, SCREEN_WIDTH, SCREEN_HEIGHT, BOTTOM_HEIGHT
 
 
-class Game(arcade.Window):
+class Orchestrator(arcade.Window):
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
-        self.current_state = GameState.MENU
-        
-        self.minigames = [ValveGame,] #mini jeu disponible 
-        
-        self.current_minigame = None # mini jeu en cours
-        
-    def setup(self):
-        pass 
+        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, "Forgeron du donjon")
+        self.layout_view = None
+        self.start_layout()
 
-    def on_draw(self):
-        pass  
+    def build_panels(self) -> list[BasePanel]:
+        panels: list[BasePanel] = []
+        panels.append(BigPanel(x=0, y=BOTTOM_HEIGHT, width=SCREEN_WIDTH, height=SCREEN_HEIGHT - BOTTOM_HEIGHT))
+        w1 = int(SCREEN_WIDTH * 0.25)
+        w2 = int(SCREEN_WIDTH * 0.45)
+        w3 = SCREEN_WIDTH - (w1 + w2)
+        x_cursor = 0
+        panels.append(SmallPanel1(x=x_cursor, y=0, width=w1, height=BOTTOM_HEIGHT))
+        x_cursor += w1
+        panels.append(SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT))
+        x_cursor += w2
+        panels.append(SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT))
+        return panels
 
-    def on_update(self, delta_time):
-        pass
+    def start_layout(self):
+        self.layout_view = LayoutView(self.build_panels())
+        self.show_view(self.layout_view)
+
 
 def main():
-    """ Main method """
-    game= Game()
-    game.setup()
+    Orchestrator()
     arcade.run()
 
 if __name__ == "__main__":
