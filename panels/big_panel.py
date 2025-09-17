@@ -14,6 +14,8 @@ from random import random, gauss, uniform, choice
 from enum import Enum
 from numpy import linspace
 from pathlib import Path
+from effects import create_explosion_system
+from enums.dragon_state import DragonState
 
 
 class SpriteState(Enum):
@@ -31,9 +33,13 @@ class Character(Sprite):
 
 
 class BigPanel(BasePanel):
-    def __init__(self, x: int, y: int, width: int, height: int):
+    def __init__(self, x: int, y: int, width: int, height: int, *, combat_mode: DragonState = DragonState.NORMAL):
 
         super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
+        
+        # Combat mode configuration
+        self.combat_mode = combat_mode
+        self._setup_mode_visuals()
 
         self.sprites = SpriteList()
         self.knight = Character()
@@ -78,28 +84,68 @@ class BigPanel(BasePanel):
         self.drake.multiply_scale(2)
         self.sword.angle = 40
 
+        self.d_healthbar = Sprite()
+        self.k_healthbar = Sprite()
+        self._healthbar = [x for x in (Path(__file__).parent.parent / "resources" / "Healthbar").iterdir()]
+        self._healthbar.sort()
+        self._healthbar.reverse()
+
+        self.max_k_lives = self.k_lives
+        self.max_d_lives = self.d_lives
+
+        for g in self._healthbar:
+            tex = load_texture(g)
+            self.d_healthbar.textures.append(tex)
+            self.k_healthbar.textures.append(tex)
+
+        self.d_healthbar.position = (float(self.width - self.width / 4), self.height - 175)        
+        self.k_healthbar.position = (float(self.width / 4), self.height - 175 )        
+
+        self.k_healthbar.multiply_scale(1.5)
+        self.d_healthbar.multiply_scale(1.5)
+
+        self.k_healthbar.set_texture(len(self.k_healthbar.textures) - 1)
+        self.d_healthbar.set_texture(len(self.d_healthbar.textures) - 1)
+
         self._init_knight_gifs()
         self.bg_tex = load_texture(
             Path(__file__).parent.parent / "resources" / "main_bg.png"
         )
 
-        self.n_dec = 30
+        self.n_dec = 20
 
         x_normal = [gauss(self.width / 2, self.width / 2) for _ in range(self.n_dec)]
-        y_normal = [gauss(self.height / 2, self.height / 2) for _ in range(self.n_dec)]
+        y_normal = linspace(0, self.width, self.n_dec)
 
         self.decorations = SpriteList()
+        self.bats = SpriteList()
 
-        for i in range(self.n_dec):
-            dec = Sprite()
-            dec.scale = random() / 2
+        decorations_text = [x for x in (Path(__file__).parent.parent / "resources" / "Props").iterdir() if x.name != "misc_scenery.png"]
+        bats_text = [x for x in (Path(__file__).parent.parent / "resources" / "Entities" / "Bats").iterdir()]
+        
+        for i in range(int(self.n_dec)):
+            dec = Sprite(path_or_texture=choice(decorations_text))
             dec.angle = 2 * pi * random()
-            dec.position = (self.left + x_normal[i], self.bottom + y_normal[i])
-            # self.sprites.append(dec)
+            dec.position = (self.left + x_normal[i], self.window.height - self.height + 20)
             self.decorations.append(dec)
+
+        for i in range(int(self.n_dec / 2)):
+            dec = Sprite(path_or_texture=choice(bats_text))
+            dec.angle = 2 * pi * random()
+            dec.scale = uniform(1.25, 2.1)
+            dec.base_x = self.left + x_normal[int(i + self.n_dec / 2)]
+            dec.base_y = self.bottom + y_normal[int(i + self.n_dec / 2)]
+            dec.freq_x = uniform(0.5, 1.5)
+            dec.freq_y = uniform(0.5, 1.5)
+            dec.phase_x = uniform(0, 2 * pi)
+            dec.phase_y = uniform(0, 2 * pi)
+            dec.center_x, dec.center_y = dec.base_x, dec.base_y
+            self.bats.append(dec)
 
         self.sprites.append(self.drake)
         self.sprites.append(self.fireball)
+        self.sprites.append(self.d_healthbar)
+        self.sprites.append(self.k_healthbar)
 
         self.dt = 0.0
         self.curr = 0
@@ -109,20 +155,61 @@ class BigPanel(BasePanel):
         self.attack_actor_start: tuple[float, float] | None = None
         self._attack_is_projectile = False
 
+        # Explosions (animation PNGs dans resources/Explosion/X_Plosion)
+        self.explosions, self.spawn_explosion, self.update_explosions, self.draw_explosions = create_explosion_system(
+            Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
+            frame_step=2,
+        )
+    def _setup_mode_visuals(self):
+        """Configure visual elements based on combat mode."""
+        match self.combat_mode:
+            case DragonState.NORMAL:
+                self.breath_color = color.RED
+                self.bg_tint = None
+            case DragonState.FIRE:
+                self.breath_color = color.DARK_RED
+                self.bg_tint = (color.DARK_TANGERINE[0], color.DARK_TANGERINE[1], color.DARK_TANGERINE[2], 40)  # Fire tint
+            case DragonState.ICE:
+                self.breath_color = color.SKY_BLUE
+                self.bg_tint = (color.DARK_BLUE[0], color.DARK_BLUE[1], color.DARK_BLUE[2], 40)  # Ice tint
+
+    def set_combat_mode(self, mode: DragonState):
+        """Change combat mode without resetting fight state (HP, timers, etc.)"""
+        self.combat_mode = mode
+        self._setup_mode_visuals()
+        # Update projectile color if it exists
+        if hasattr(self, 'fireball') and self.fireball:
+            self.fireball.color = self.breath_color
+
     def on_draw(self) -> None:
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
         draw_texture_rect(self.bg_tex, self.rect)
+        
+        # Apply mode-specific background tint
+        if self.bg_tint is not None:
+            from arcade import draw_lrbt_rectangle_filled
+            draw_lrbt_rectangle_filled(self.left, self.right, self.bottom, self.top, self.bg_tint)
+        
+        k_index = int((self.k_lives / self.max_k_lives) * (len(self.k_healthbar.textures) - 1))
+        d_index = int((self.d_lives / self.max_d_lives) * (len(self.d_healthbar.textures) - 1))
+        k_index = max(0, min(k_index, len(self.k_healthbar.textures) - 1))
+        d_index = max(0, min(d_index, len(self.d_healthbar.textures) - 1))
+        self.k_healthbar.set_texture(k_index)
+        self.d_healthbar.set_texture(d_index)
 
         self.decorations.draw()
+        self.bats.draw()
         self.sprites.draw()
+        
+        # Dessiner les explosions
+        self.draw_explosions()
 
         msg_x = self.left + self.width / 2 - 80
         msg_y = self.bottom + self.height - 40
 
         if self.s_lives <= 0:
             draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
-            self.knight.set_texture(1)
             msg_y -= 25
         if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
             draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
@@ -138,9 +225,7 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent
             / "resources/knight/Colour1/Outline/120x80_gifs"
         )
-
         L = lambda n: load_animated_gif(base / n)
-
         self.k_gifs = {
             SpriteState.STANDBY: L("__Idle.gif"),
             SpriteState.ATTACKING: L("__Attack.gif"),
@@ -150,10 +235,8 @@ class BigPanel(BasePanel):
         }
         for g in self.k_gifs.values():
             g.multiply_scale(4)
-
             g.center_x, g.center_y = self.knight.center_x, self.knight.center_y
             g.visible = False
-
             self.sprites.append(g)
         self._apply_knight_gif()
 
@@ -186,17 +269,31 @@ class BigPanel(BasePanel):
         steps = 12
         fxs = linspace(ax, tip_x, steps)
         fys = linspace(ay, tip_y, steps)
-        bxs = linspace(tip_x, ax, steps)[1:]
-        bys = linspace(tip_y, ay, steps)[1:]
-        self.attack_path = [(x, y) for x, y in zip(fxs, fys)] + [
-            (x, y) for x, y in zip(bxs, bys)
-        ]
+        if projectile:
+            # Projectile: uniquement l'aller, pas de retour
+            self.attack_path = [(x, y) for x, y in zip(fxs, fys)]
+        else:
+            # Corps-à-corps: aller-retour
+            bxs = linspace(tip_x, ax, steps)[1:]
+            bys = linspace(tip_y, ay, steps)[1:]
+            self.attack_path = [(x, y) for x, y in zip(fxs, fys)] + [
+                (x, y) for x, y in zip(bxs, bys)
+            ]
         self.attack_actor = attacker
         self.attack_actor_start = (ax, ay)
         self.attacking = True
         self._attack_is_projectile = projectile
 
     def _end_attack_anim(self) -> None:
+        # Pour les projectiles, on capture la dernière position avant tout reset
+        last_fx = None
+        last_fy = None
+        if self._attack_is_projectile and self.attack_actor is not None:
+            last_fx = self.attack_actor.center_x
+            last_fy = self.attack_actor.center_y
+        if self._attack_is_projectile and last_fx is not None and last_fy is not None:
+            # Explosion au point d'impact (dernière position atteinte)
+            self.spawn_explosion(last_fx, last_fy)
         if self.attack_actor and self.attack_actor_start:
             self.attack_actor.center_x, self.attack_actor.center_y = (
                 self.attack_actor_start
@@ -230,6 +327,9 @@ class BigPanel(BasePanel):
     def on_update(self, delta_time: float) -> None:
         self.dt += delta_time
 
+        # Mettre à jour les explosions
+        self.update_explosions(delta_time)
+
         if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
             if self.attacking and self._attack_is_projectile:
                 self._end_attack_anim()
@@ -241,6 +341,15 @@ class BigPanel(BasePanel):
                 self.k_gifs[self.k_state].update_animation(delta_time)
             return
 
+        for bat in self.bats:
+            offset_x = sin(self.dt * bat.freq_x + bat.phase_x) * 5
+            offset_y = cos(self.dt * bat.freq_y + bat.phase_y) * 3
+            new_x = bat.base_x + offset_x
+            new_y = bat.base_y + offset_y
+            new_x = min(max(new_x, self.left), self.right)
+            new_y = min(max(new_y, self.bottom), self.top)
+            bat.center_x, bat.center_y = new_x, new_y
+
         if self.attacking:
             self._tick_attack_anim()
         else:
@@ -248,24 +357,6 @@ class BigPanel(BasePanel):
                 self.act()
                 self.dt = 0.0
 
-                # randomly shuffle positions of the decoration
-            if random() < .05:
-                for dec in self.decorations:
-                    base_x, base_y = dec.position
-                    offset_x = (
-                        sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
-                    )
-                    offset_y = (
-                        cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
-                    )
-
-                    new_x = base_x + offset_x
-                    new_y = base_y + offset_y
-
-                    new_x = min(max(new_x, self.left), self.right)
-                    new_y = min(max(new_y, self.bottom), self.top)
-
-                    dec.center_x, dec.center_y = new_x, new_y
         self._sync_knight_gif_pos()
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
@@ -300,7 +391,8 @@ class BigPanel(BasePanel):
                         self.drake.center_x,
                         self.drake.center_y,
                     )
-                    self.fireball.color = color.RED
+
+                    self.fireball.color = self.breath_color  # Use mode-specific breath color
                     self.k_lives = max(0, self.k_lives - 1)
                     self._start_attack_anim(self.fireball, self.knight, projectile=True)
                     self.d_state = SpriteState.ATTACKING
