@@ -8,11 +8,13 @@ KEYS_TO_ADVANCE = [
     arcade.key.ESCAPE,
 ]
 
+
 class CinematicView(arcade.View):
     def __init__(self, messages: list[str], *, cps: float = 35.0):
         super().__init__()
         self.messages = messages
         self.index = 0
+        self.cinematic_background = arcade.load_texture("ressources/backgrounds/dialogue_background.png")
 
         from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT
 
@@ -40,6 +42,8 @@ class CinematicView(arcade.View):
 
     def on_draw(self):
         self.clear()
+        self._draw_background()
+
         self.box.draw()
 
         hint = "[ESPACE] avancer"
@@ -50,6 +54,14 @@ class CinematicView(arcade.View):
             arcade.color.GRAY,
             14,
             font_name=("Righteous", "arial", "calibri"),
+        )
+
+    def _draw_background(self):
+        from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT
+
+        arcade.draw_texture_rect(
+            self.cinematic_background,
+            arcade.LBWH(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT),
         )
 
     def _advance_or_finish(self):
