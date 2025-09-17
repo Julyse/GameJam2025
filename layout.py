@@ -44,6 +44,11 @@ class LayoutView(arcade.View):
         for p in self.panels:
             if hasattr(p, "on_key_press"):
                 p.on_key_press(key, modifiers)
+                
+    def on_key_release(self, key, modifiers):
+        for p in self.panels:
+            if hasattr(p, "on_key_release"):
+                p.on_key_release(key, modifiers)
 
 
 # -------------------------------

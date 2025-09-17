@@ -6,6 +6,7 @@ from mini_games.undertale import Undertale, DragonState
 
 class SmallPanel2(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
+        print("x")
         super().__init__(x=x, y=y, width=width, height=height,
                          color=arcade.color.SKY_BLUE, label="Flappy")
 
@@ -14,14 +15,15 @@ class SmallPanel2(BasePanel):
         # self.game = FlappyGame(width, height, mode=VisualMode.LAVA)
         self.game = Undertale(width, height, DragonState.FIRE)
 
-        self.window.push_handlers(self)
+        # On n'utilise pas push_handlers car la propagation des événements
+        # est gérée par LayoutView qui appelle on_key_press et on_key_release
 
     def on_update(self, delta_time: float):
         self.game.update(delta_time)
 
     def on_draw(self):
         super().on_draw()
-        # clear ?
+        # Pas de scissor disponible, on dessine simplement avec les offsets
         self.game.draw(offset_x=self.left, offset_y=self.bottom)
 
     def on_key_press(self, key, modifiers):

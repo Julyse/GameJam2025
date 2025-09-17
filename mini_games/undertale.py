@@ -74,14 +74,17 @@ class Undertale:
         grid = []
         for line in text.splitlines():
             grid.append([int(ch) for ch in line])
-        return grid
+        
+        # Limiter la taille de la grille si nécessaire pour rester visible dans le panel
+        max_rows = 7  # Pour s'adapter à la hauteur du panel
+        return grid[:max_rows] if len(grid) > max_rows else grid
 
     def check_win_condition(self):
         """
         If all walls have scrolled past the left side of the screen, declare WIN.
         """
-        # Only consider walls that are still on or past the left edge
-        if all(wall.right < 0 for wall in self.wall_list):
+        # Si tous les murs ont été supprimés (car sortis de l'écran) ou sont sortis à gauche
+        if len(self.wall_list) == 0 or all(wall.right < 0 for wall in self.wall_list):
             self.game_status = GameStatus.WIN
             print("You won!")
             arcade.close_window()
@@ -99,8 +102,9 @@ class Undertale:
         self.screen_width = width #720
         self.screen_height = height #325
         
-        self.tile_width = self.screen_width / 10
-        self.tile_height = self.screen_height / 5
+        # Tailles des tuiles adaptées à l'écran - plus petites pour garder les murs visibles
+        self.tile_width = self.screen_width / 15  # Plus de colonnes = murs plus étroits
+        self.tile_height = self.screen_height / 7  # Plus de lignes = murs moins hauts
 
         self.sprite_scaling = 0.5 #to =_determine form width and height
 
@@ -212,13 +216,43 @@ class Undertale:
             arcade.LBWH(offset_x, offset_y, self.screen_width, self.screen_height),
         )
 
-        self.wall_list.draw() 
-        # Draw all the sprites.
+        # Sauvegarder positions originales
+        wall_positions = [(wall.center_x, wall.center_y) for wall in self.wall_list]
+        player_positions = [(player.center_x, player.center_y) for player in self.player_list]
+        hitbox_positions = [(hitbox.center_x, hitbox.center_y) for hitbox in self.hitbox_list]
+        
+        # Ajouter offset à tous les sprites
+        for wall in self.wall_list:
+            wall.center_x += offset_x
+            wall.center_y += offset_y
+        
+        for player in self.player_list:
+            player.center_x += offset_x
+            player.center_y += offset_y
+        
+        for hitbox in self.hitbox_list:
+            hitbox.center_x += offset_x
+            hitbox.center_y += offset_y
+        
+        # Dessiner tous les murs, la suppression des murs hors écran dans update() devrait suffire
+        self.wall_list.draw()
+            
+        # Dessiner le joueur et le hitbox
         if not self.invincible or self.blink_state:
             self.player_list.draw()
-
-        if (DEBUG_SHOW_HITBOX):
-            self.hitbox_list.draw()  # Debug
+        
+        if DEBUG_SHOW_HITBOX:
+            self.hitbox_list.draw()
+        
+        # Restaurer positions originales
+        for i, wall in enumerate(self.wall_list):
+            wall.center_x, wall.center_y = wall_positions[i]
+        
+        for i, player in enumerate(self.player_list):
+            player.center_x, player.center_y = player_positions[i]
+        
+        for i, hitbox in enumerate(self.hitbox_list):
+            hitbox.center_x, hitbox.center_y = hitbox_positions[i]
 
     def update_player_speed(self):
         # Calculate speed based on the keys pressed
@@ -294,9 +328,20 @@ class Undertale:
         if self.gamemode == DragonState.FIRE:
             self.wall_list.update_animation(delta_time)
 
+        # Déplacer les murs et supprimer ceux qui sortent du panel à gauche
+        walls_to_remove = []
         for wall in self.wall_list:
             wall.center_x += self.scroll_speed_x
             wall.center_y += self.scroll_speed_y
+            
+            # Supprimer les murs dès qu'ils sont complètement sortis du panel à gauche
+            # Avec une marge négative pour être sûr qu'ils sont bien sortis
+            if wall.right < 35:  # Marge de 5 pixels pour être sûr
+                walls_to_remove.append(wall)
+        
+        # Supprimer les murs qui sont sortis du panel
+        for wall in walls_to_remove:
+            self.wall_list.remove(wall)
 
         self.check_win_condition()
 
