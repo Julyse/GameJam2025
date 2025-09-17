@@ -1,9 +1,7 @@
 import arcade
-from enums.game_state import GameState
-from layout import LayoutView, build_default_panels
+from game_controller import GameController
 from ui import MessageBox
 
-# Touches pour accélérer le texte des dialogues
 KEYS_TO_ADVANCE = [
     arcade.key.SPACE,
     arcade.key.ENTER,
@@ -13,12 +11,10 @@ KEYS_TO_ADVANCE = [
 class CinematicView(arcade.View):
     def __init__(self, messages: list[str], *, cps: float = 35.0):
         super().__init__()
-        self.state = GameState.CINEMATIC
         self.messages = messages
         self.index = 0
 
-        # Dimensions par défaut plein écran, avec marges
-        from layout import SCREEN_WIDTH, SCREEN_HEIGHT
+        from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT
 
         margin = 40
         box_width = SCREEN_WIDTH - margin * 2
@@ -46,11 +42,8 @@ class CinematicView(arcade.View):
 
     def on_draw(self):
         self.clear()
-        # Simple fond sombre
-        # Texte box
         self.box.draw()
 
-        # Indication (skip)
         hint = "[ESPACE] avancer"
         arcade.draw_text(
             hint,
@@ -75,6 +68,4 @@ class CinematicView(arcade.View):
             self._advance_or_finish()
 
     def _start_game(self):
-        self.state = GameState.GAME
-        game_view = LayoutView(build_default_panels())
-        self.window.show_view(game_view)
+        GameController.start_game(self.window)

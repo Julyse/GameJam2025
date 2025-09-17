@@ -16,7 +16,6 @@ class MenuView(arcade.View):
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
 
-        # --- Layout vertical pour les boutons
         v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         title_label = arcade.gui.UILabel(
