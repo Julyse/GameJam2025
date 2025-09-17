@@ -7,7 +7,7 @@ from random import random, gauss
 
 class BigPanel(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
-        super().__init__(x=x, y=y, width=width, height=height, color=arcade.color.AIR_FORCE_BLUE, label="Grand écran")
+        super().__init__(x=x, y=y, width=width, height=height, color=arcade.color.AIR_FORCE_BLUE, label="Grand ecran")
 
         # --- Contenu "Arena" embarqué ---
         self.sprites = SpriteList()
@@ -48,5 +48,5 @@ class BigPanel(BasePanel):
         super().on_draw()
         # Dessin du contenu Arena dans la zone du panel
         self.sprites.draw()
-        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK)
+        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
 

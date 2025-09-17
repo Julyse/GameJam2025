@@ -49,6 +49,7 @@ class CinematicView(arcade.View):
             10,
             arcade.color.GRAY,
             14,
+            font_name=("Righteous", "arial", "calibri"),
         )
 
     def _advance_or_finish(self):
