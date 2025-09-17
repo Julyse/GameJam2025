@@ -22,6 +22,7 @@ class LayoutView(arcade.View):
     def __init__(self, panels: list[BasePanel]):
         super().__init__()
         self.panels = panels
+
         # rien de spécial
 
     # -- Dessin
@@ -44,18 +45,3 @@ class LayoutView(arcade.View):
         for p in self.panels:
             if hasattr(p, "on_key_press"):
                 p.on_key_press(key, modifiers)
-
-
-# -------------------------------
-# 4. Lancement
-# -------------------------------
-def main():
-    # Exemple d'utilisation autonome
-    window = arcade.Window(SCREEN_WIDTH, SCREEN_HEIGHT, "Layout Modulaire")
-    view = LayoutView([])
-    window.show_view(view)
-    arcade.run()
-
-
-if __name__ == "__main__":
-    main()
