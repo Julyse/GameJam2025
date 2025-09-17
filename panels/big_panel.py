@@ -333,12 +333,12 @@ class BigPanel(BasePanel):
         self.fireball.append_texture(load_texture(Path(__file__).parent.parent / "resources" / "fire2_1.gif"))
 
         center_x = self.width / 2 + x
-        center_y = self.height / 2 + y
+        base_y = self.bottom + 200  # position verticale fixe, bas du panel
 
-        padding = uniform(200, 350)
+        padding = 295.0  # écart horizontal fixe
 
-        self.knight.position = (center_x - padding, center_y)
-        self.drake.position = (center_x + padding, center_y)
+        self.knight.position = (center_x - padding, base_y)
+        self.drake.position = (center_x + padding, base_y - 55)
 
         self.fireball.position = (self.drake.center_x, self.drake.center_y)
         self.fireball.multiply_scale(1.25)
@@ -348,7 +348,7 @@ class BigPanel(BasePanel):
         self.knight_ipos = (self.knight.center_x, self.knight.center_y)
         self.drake_ipos = (self.drake.center_x, self.drake.center_y)
 
-        self.sword.position = (center_x - padding + 100, center_y + 20)
+        self.sword.position = (center_x - padding + 100, base_y + 20)
 
         self.drake.texture = self.drake.texture.flip_horizontally()
 
