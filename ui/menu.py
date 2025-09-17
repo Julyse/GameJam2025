@@ -3,13 +3,12 @@ import arcade.gui
 import arcade.gui.widgets.buttons
 import arcade.gui.widgets.layout
 from enums.game_state import GameState
-from layout import LayoutView, build_default_panels
-
+from ui.cinematic import CinematicView
+from dialogues.start_dialogues import START_DIALOGUES
 
 class QuitButton(arcade.gui.widgets.buttons.UIFlatButton):
     def on_click(self, event: arcade.gui.UIOnClickEvent):
         arcade.exit()
-
 
 class MenuView(arcade.View):
     def __init__(self):
@@ -39,7 +38,7 @@ class MenuView(arcade.View):
 
         @start_button.event("on_click")
         def on_click_start(event):
-            self.start_game()
+            self.start_cinematic()
 
         @options_button.event("on_click")
         def on_click_options(event):
@@ -58,8 +57,24 @@ class MenuView(arcade.View):
         self.clear()
         self.manager.draw()
 
-    def start_game(self):
-        # Bascule d'état et affichage du LayoutView
-        self.state = GameState.GAME
-        game_view = LayoutView(build_default_panels())
-        self.window.show_view(game_view)
+    def start_cinematic(self):
+        self.state = GameState.CINEMATIC
+        if hasattr(self.manager, "disable"):
+            self.manager.disable()
+        if hasattr(self.manager, "clear"):
+            self.manager.clear()
+        elif hasattr(self.manager, "purge_ui_elements"):
+            self.manager.purge_ui_elements()
+        elif hasattr(self.manager, "children"):
+            self.manager.children = []
+        self.window.show_view(CinematicView(START_DIALOGUES))
+
+    def on_hide_view(self):
+        if hasattr(self.manager, "disable"):
+            self.manager.disable()
+        if hasattr(self.manager, "clear"):
+            self.manager.clear()
+        elif hasattr(self.manager, "purge_ui_elements"):
+            self.manager.purge_ui_elements()
+        elif hasattr(self.manager, "children"):
+            self.manager.children = []

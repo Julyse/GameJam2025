@@ -10,7 +10,7 @@ class MessageBox:
         width: int,
         height: int,
         text: str = "",
-        *, # les paramètres suivants sont optionnels
+        *,  # les paramètres suivants sont optionnels
         characters_per_second: float = 20.0,
         font_path: str | None = None,
         font_name: str | None = "Righteous",
@@ -90,14 +90,16 @@ class MessageBox:
         top = bottom + self.height
 
         # Fond
-        arcade.draw_lrbt_rectangle_filled(left, right, bottom, top, self.background_color)
+        arcade.draw_lrbt_rectangle_filled(
+            left, right, bottom, top, self.background_color
+        )
         # Bordure
         if self.border_width > 0:
-            arcade.draw_rectangle_outline(
-                left + self.width / 2,
-                bottom + self.height / 2,
-                self.width,
-                self.height,
+            arcade.draw_lrbt_rectangle_outline(
+                left,
+                right,
+                bottom,
+                top,
                 self.border_color,
                 border_width=self.border_width,
             )
@@ -105,7 +107,7 @@ class MessageBox:
         # Texte avec effet "machine à écrire"
         visible_text = self.full_text[: self.visible_count]
         text_left = left + self.padding
-        text_bottom = bottom + self.padding
+        text_top = top - self.padding
         text_width = max(0, self.width - 2 * self.padding)
         text_height = max(0, self.height - 2 * self.padding)
 
@@ -113,12 +115,11 @@ class MessageBox:
         arcade.draw_text(
             visible_text,
             text_left,
-            text_bottom,
+            text_top,
             self.text_color,
             self.font_size,
             width=text_width,
             align="left",
             font_name=self._font_name,
+            anchor_y="top",
         )
-
-
