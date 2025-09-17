@@ -295,7 +295,7 @@ class CombatEncounter:
             draw_text("GAME OVER", center_x, center_y,
                      color.RED, 48, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
-            draw_text("Le hero a perdu...", center_x, center_y - 60,
+            draw_text("La bataille est perdue...", center_x, center_y - 60,
                      color.RED, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
                      
@@ -477,8 +477,9 @@ class BigPanel(BasePanel):
             from arcade import draw_lrbt_rectangle_filled
             draw_lrbt_rectangle_filled(self.left, self.right, self.bottom, self.top, self.bg_tint)
         
-        k_index = int((self.k_lives / self.max_k_lives) * (len(self.k_healthbar.textures) - 1))
-        d_index = int((self.d_lives / self.max_d_lives) * (len(self.d_healthbar.textures) - 1))
+        # Mise à jour des barres de vie basée sur le système de combat
+        k_index = int((self.encounter.hero_hp / 10) * (len(self.k_healthbar.textures) - 1))
+        d_index = int((self.encounter.dragon_hp / 20) * (len(self.d_healthbar.textures) - 1))
         k_index = max(0, min(k_index, len(self.k_healthbar.textures) - 1))
         d_index = max(0, min(d_index, len(self.d_healthbar.textures) - 1))
         self.k_healthbar.set_texture(k_index)
