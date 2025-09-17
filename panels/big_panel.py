@@ -58,6 +58,7 @@ class BigPanel(BasePanel):
         self.fireball.angle = 90.0
         self.fireball.color = color.TRANSPARENT_BLACK
 
+
         self.knight_ipos = (self.knight.center_x, self.knight.center_y)
         self.drake_ipos = (self.drake.center_x, self.drake.center_y)
 
@@ -77,6 +78,23 @@ class BigPanel(BasePanel):
         self.sword.width /= 4
         self.drake.multiply_scale(2)
         self.sword.angle = 40
+
+        self.d_healthbar = Sprite()
+        self.k_healthbar = Sprite()
+        self._healthbar = [x for x in (Path(__file__).parent.parent / "resources" / "Healthbar").iterdir()]
+
+        for g in self._healthbar[::-1]:
+            self.d_healthbar.textures.append(load_texture(g))
+            self.k_healthbar.textures.append(load_texture(g))
+
+        self.d_healthbar.position = (float(self.width - self.width / 3), self.height - 100)        
+        self.k_healthbar.position = (float(self.width / 3), self.height - 100 )        
+
+        self.k_healthbar.multiply_scale(1.25)
+        self.d_healthbar.multiply_scale(1.25)
+
+        self.k_healthbar.set_texture(0)
+        self.d_healthbar.set_texture(0)
 
         self._init_knight_gifs()
         self.bg_tex = load_texture(
@@ -108,10 +126,12 @@ class BigPanel(BasePanel):
             dec.scale = uniform(1.25, 2.1)
             dec.position = (self.left + x_normal[int(i + self.n_dec / 2)], self.bottom + y_normal[int(i + self.n_dec / 2)])
             self.bats.append(dec)
-        
 
         self.sprites.append(self.drake)
         self.sprites.append(self.fireball)
+
+        self.sprites.append(self.d_healthbar)
+        self.sprites.append(self.k_healthbar)
 
         self.dt = 0.0
         self.curr = 0
@@ -129,13 +149,13 @@ class BigPanel(BasePanel):
         self.decorations.draw()
         self.bats.draw()
         self.sprites.draw()
-
+        
         msg_x = self.left + self.width / 2 - 80
         msg_y = self.bottom + self.height - 40
 
         if self.s_lives <= 0:
             draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
-            self.knight.set_texture(1)
+            #self.knight.set_texture(1)
             msg_y -= 25
         if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
             draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
@@ -283,7 +303,7 @@ class BigPanel(BasePanel):
             self.k_gifs[self.k_state].update_animation(delta_time)
 
         # Draw life bar
-        
+
 
     def act(self):
         if self.k_lives <= 0:
