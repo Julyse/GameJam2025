@@ -6,7 +6,7 @@ class SmallPanel2(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
         super().__init__(x=x, y=y, width=width, height=height,
                          color=arcade.color.SKY_BLUE, label="Flappy")
-        self.game = FlappyGame(width, height, mode=VisualMode.LAVA)
+        self.game = FlappyGame(width, height, mode=VisualMode.NORMAL)
 
     def on_update(self, delta_time: float):
         self.game.update(delta_time)
