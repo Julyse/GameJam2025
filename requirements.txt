@@ -1,7 +1,14 @@
 arcade==3.3.2
 attrs==25.3.0
+black==25.1.0
 cffi==2.0.0
+click==8.2.1
+mypy_extensions==1.1.0
+numpy==2.3.3
+packaging==25.0
+pathspec==0.12.1
 pillow==11.0.0
+platformdirs==4.4.0
 pycparser==2.23
 pyglet==2.1.8
 pymunk==6.9.0
