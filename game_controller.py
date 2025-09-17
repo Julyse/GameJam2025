@@ -2,6 +2,7 @@ import arcade
 from panels.base_panel import BasePanel
 from panels import BigPanel, SmallPanel1, SmallPanel2, SmallPanel3
 from enums.game_state import GameState
+from enums.dragon_state import DragonState
 
 SCREEN_WIDTH  = 1280
 SCREEN_HEIGHT = 720
@@ -41,7 +42,7 @@ class GameController(arcade.View):
 
 def build_default_panels() -> list[BasePanel]:
     panels: list[BasePanel] = []
-    panels.append(BigPanel(x=0, y=BOTTOM_HEIGHT, width=SCREEN_WIDTH, height=SCREEN_HEIGHT - BOTTOM_HEIGHT))
+    panels.append(BigPanel(x=0, y=BOTTOM_HEIGHT, width=SCREEN_WIDTH, height=SCREEN_HEIGHT - BOTTOM_HEIGHT, combat_mode=DragonState.NORMAL))
     w1 = int(SCREEN_WIDTH * 0.25)
     w2 = int(SCREEN_WIDTH * 0.45)
     w3 = SCREEN_WIDTH - (w1 + w2)

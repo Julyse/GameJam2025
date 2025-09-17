@@ -14,6 +14,7 @@ from random import random, gauss, uniform, choice
 from enum import Enum
 from numpy import linspace
 from pathlib import Path
+from enums.dragon_state import DragonState
 
 
 class SpriteState(Enum):
@@ -31,9 +32,13 @@ class Character(Sprite):
 
 
 class BigPanel(BasePanel):
-    def __init__(self, x: int, y: int, width: int, height: int):
+    def __init__(self, x: int, y: int, width: int, height: int, *, combat_mode: DragonState = DragonState.NORMAL):
 
         super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
+        
+        # Combat mode configuration
+        self.combat_mode = combat_mode
+        self._setup_mode_visuals()
 
         self.sprites = SpriteList()
         self.knight = Character()
@@ -149,10 +154,36 @@ class BigPanel(BasePanel):
         self.attack_actor_start: tuple[float, float] | None = None
         self._attack_is_projectile = False
 
+    def _setup_mode_visuals(self):
+        """Configure visual elements based on combat mode."""
+        match self.combat_mode:
+            case DragonState.NORMAL:
+                self.breath_color = color.RED
+                self.bg_tint = None
+            case DragonState.FIRE:
+                self.breath_color = color.DARK_RED
+                self.bg_tint = (color.DARK_TANGERINE[0], color.DARK_TANGERINE[1], color.DARK_TANGERINE[2], 40)  # Fire tint
+            case DragonState.ICE:
+                self.breath_color = color.SKY_BLUE
+                self.bg_tint = (color.DARK_BLUE[0], color.DARK_BLUE[1], color.DARK_BLUE[2], 40)  # Ice tint
+
+    def set_combat_mode(self, mode: DragonState):
+        """Change combat mode without resetting fight state (HP, timers, etc.)"""
+        self.combat_mode = mode
+        self._setup_mode_visuals()
+        # Update projectile color if it exists
+        if hasattr(self, 'fireball') and self.fireball:
+            self.fireball.color = self.breath_color
+
     def on_draw(self) -> None:
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
         draw_texture_rect(self.bg_tex, self.rect)
+        
+        # Apply mode-specific background tint
+        if self.bg_tint is not None:
+            from arcade import draw_lrbt_rectangle_filled
+            draw_lrbt_rectangle_filled(self.left, self.right, self.bottom, self.top, self.bg_tint)
         
         k_index = int((self.k_lives / self.max_k_lives) * (len(self.k_healthbar.textures) - 1))
         d_index = int((self.d_lives / self.max_d_lives) * (len(self.d_healthbar.textures) - 1))
@@ -334,7 +365,7 @@ class BigPanel(BasePanel):
                         self.drake.center_x,
                         self.drake.center_y,
                     )
-                    self.fireball.color = color.RED
+                    self.fireball.color = self.breath_color  # Use mode-specific breath color
                     self.k_lives = max(0, self.k_lives - 1)
                     self._start_attack_anim(self.fireball, self.knight, projectile=True)
                     self.d_state = SpriteState.ATTACKING
