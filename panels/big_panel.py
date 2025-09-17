@@ -9,7 +9,7 @@ from arcade import (
     draw_texture_rect,
     load_animated_gif,
 )
-from math import pi
+from math import cos, pi, sin
 from random import random, gauss, uniform, choice
 from enum import Enum
 from numpy import linspace
@@ -33,62 +33,70 @@ class Character(Sprite):
 class BigPanel(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
         super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
-        
+
         self.sprites = SpriteList()
         self.knight = Character()
-        self.drake = Character(path_or_texture=Path(__file__).parent.parent / "resources" / "drake.png")
+        self.drake = Character(
+            path_or_texture=Path(__file__).parent.parent / "resources" / "drake.png"
+        )
         self.sword = Sprite()
-        self.fireball = Sprite()
         
+        self.fireball = Character(path_or_texture=Path(__file__).parent.parent / "resources" / "fire1.gif")
+        self.fireball.append_texture(load_texture(Path(__file__).parent.parent / "resources" / "fire2_1.gif"))
+
         center_x = self.width / 2 + x
         center_y = self.height / 2 + y
-        
+
         padding = uniform(200, 350)
-        
+
         self.knight.position = (center_x - padding, center_y)
         self.drake.position = (center_x + padding, center_y)
-        
+
         self.fireball.position = (self.drake.center_x, self.drake.center_y)
-        self.fireball.multiply_scale(0.25)
+        self.fireball.multiply_scale(1.25)
+        self.fireball.angle = 90.0
         self.fireball.color = color.TRANSPARENT_BLACK
-        
+
         self.knight_ipos = (self.knight.center_x, self.knight.center_y)
         self.drake_ipos = (self.drake.center_x, self.drake.center_y)
-        
+
         self.sword.position = (center_x - padding + 100, center_y + 20)
-        
+
         self.drake.texture = self.drake.texture.flip_horizontally()
 
         self.k_state = SpriteState.STANDBY
         self.d_state = SpriteState.STANDBY
         self.s_state = SpriteState.STANDBY
-        
+
         self.k_lives = 5
         self.d_lives = 10
         self.s_lives = 4
         self.s_strength = 1
-        
+
         self.sword.width /= 4
         self.drake.multiply_scale(2)
         self.sword.angle = 40
-        
+
         self._init_knight_gifs()
         self.bg_tex = load_texture(
             Path(__file__).parent.parent / "resources" / "main_bg.png"
         )
-        
+
         self.n_dec = 30
-        
+
         x_normal = [gauss(self.width / 2, self.width / 2) for _ in range(self.n_dec)]
         y_normal = [gauss(self.height / 2, self.height / 2) for _ in range(self.n_dec)]
-        
+
+        self.decorations = SpriteList()
+
         for i in range(self.n_dec):
             dec = Sprite()
             dec.scale = random() / 2
             dec.angle = 2 * pi * random()
             dec.position = (self.left + x_normal[i], self.bottom + y_normal[i])
-            self.sprites.append(dec)
-        
+            # self.sprites.append(dec)
+            self.decorations.append(dec)
+
         self.sprites.append(self.drake)
         self.sprites.append(self.fireball)
 
@@ -104,14 +112,16 @@ class BigPanel(BasePanel):
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK)
         draw_texture_rect(self.bg_tex, self.rect)
-        
+
+        self.decorations.draw()
         self.sprites.draw()
-        
+
         msg_x = self.left + self.width / 2 - 80
         msg_y = self.bottom + self.height - 40
-        
+
         if self.s_lives <= 0:
             draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
+            self.knight.set_texture(1)
             msg_y -= 25
         if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
             draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
@@ -119,14 +129,17 @@ class BigPanel(BasePanel):
         if self.d_lives <= 0 or self.d_state == SpriteState.DEAD:
             draw_text("The drake is dead!", msg_x, msg_y, color.RED, 16)
 
+    def set_ball_type(type: any): # type: ignore
+        pass
+
     def _init_knight_gifs(self) -> None:
         base = (
             Path(__file__).parent.parent
             / "resources/knight/Colour1/Outline/120x80_gifs"
         )
-        
+
         L = lambda n: load_animated_gif(base / n)
-        
+
         self.k_gifs = {
             SpriteState.STANDBY: L("__Idle.gif"),
             SpriteState.ATTACKING: L("__Attack.gif"),
@@ -136,10 +149,10 @@ class BigPanel(BasePanel):
         }
         for g in self.k_gifs.values():
             g.multiply_scale(4)
-            
+
             g.center_x, g.center_y = self.knight.center_x, self.knight.center_y
             g.visible = False
-            
+
             self.sprites.append(g)
         self._apply_knight_gif()
 
@@ -215,6 +228,7 @@ class BigPanel(BasePanel):
 
     def on_update(self, delta_time: float) -> None:
         self.dt += delta_time
+
         if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
             if self.attacking and self._attack_is_projectile:
                 self._end_attack_anim()
@@ -225,12 +239,32 @@ class BigPanel(BasePanel):
             if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
                 self.k_gifs[self.k_state].update_animation(delta_time)
             return
+
         if self.attacking:
             self._tick_attack_anim()
         else:
             if self.dt > 1.5:
                 self.act()
                 self.dt = 0.0
+
+                # randomly shuffle positions of the decoration
+            if random() < .05:
+                for dec in self.decorations:
+                    base_x, base_y = dec.position
+                    offset_x = (
+                        sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
+                    )
+                    offset_y = (
+                        cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
+                    )
+
+                    new_x = base_x + offset_x
+                    new_y = base_y + offset_y
+
+                    new_x = min(max(new_x, self.left), self.right)
+                    new_y = min(max(new_y, self.bottom), self.top)
+
+                    dec.center_x, dec.center_y = new_x, new_y
         self._sync_knight_gif_pos()
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
