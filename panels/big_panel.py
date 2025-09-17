@@ -441,6 +441,8 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
             frame_step=2,
         )
+        # Nombre d'étapes pour le déplacement des projectiles (plus grand = plus lent)
+        self.fireball_steps = 24
         
         # Combat encounter system
         self.encounter = CombatEncounter(self)
@@ -545,7 +547,7 @@ class BigPanel(BasePanel):
         else:
             tip_x = dx - vx / dist * stop_before
             tip_y = dy - vy / dist * stop_before
-        steps = 12
+        steps = self.fireball_steps if projectile else 12
         fxs = linspace(ax, tip_x, steps)
         fys = linspace(ay, tip_y, steps)
         if projectile:
