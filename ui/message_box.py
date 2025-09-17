@@ -54,7 +54,6 @@ class MessageBox:
         else:
             self._font_name = font_name or "Arial"
 
-        # Texture de fond optionnelle
         if background_texture_path and os.path.isfile(background_texture_path):
             try:
                 self._background_texture = arcade.load_texture(background_texture_path)
@@ -93,7 +92,6 @@ class MessageBox:
 
         # Fond
         if self._background_texture is not None:
-            # Dessiner l'image à sa taille nat0 au coin bas-gauche de la box
 
             arcade.draw_texture_rect(
                 self._background_texture,
@@ -104,7 +102,7 @@ class MessageBox:
             arcade.draw_lrbt_rectangle_filled(
                 left, right, bottom, top, self.background_color
             )
-        # Bordure (désactivée si on affiche une image de fond)
+
         if self._background_texture is None and self.border_width > 0:
             arcade.draw_lrbt_rectangle_outline(
                 left,
@@ -115,14 +113,12 @@ class MessageBox:
                 border_width=self.border_width,
             )
 
-        # Texte avec effet "machine à écrire"
         visible_text = self.full_text[: self.visible_count]
         text_left = left + self.padding
         text_top = top - self.padding
         text_width = max(0, self.width - 2 * self.padding)
         text_height = max(0, self.height - 2 * self.padding)
 
-        # Arcade gère le wrap si width est fourni.
         arcade.draw_text(
             visible_text,
             text_left,
