@@ -175,17 +175,6 @@ class SwordStacking:
                 angle=angle_deg
             )
 
-            # Draw hitbox for debug
-            shape = sprite.pymunk_shape
-            if isinstance(shape, pymunk.Poly):
-                points = [shape.body.local_to_world(v) for v in shape.get_vertices()]
-                points = [(p.x + offset_x, p.y + offset_y) for p in points]
-                arcade.draw_line_strip(points + [points[0]], arcade.color.RED, 1)
-            elif isinstance(shape, pymunk.Circle):
-                center = shape.body.position
-                arcade.draw_circle_outline(center.x + offset_x, center.y + offset_y, shape.radius, arcade.color.RED, 1)
-
-
     def _create_boundaries(self):
         floor_height = 10
         floor_body = pymunk.Body(body_type=pymunk.Body.STATIC)
