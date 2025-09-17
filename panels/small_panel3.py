@@ -1,6 +1,6 @@
 from .base_panel import BasePanel
 import arcade
-from sword_stacking import SwordStacking
+from ui.sword_stacking import SwordStacking
 
 class SmallPanel3(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):

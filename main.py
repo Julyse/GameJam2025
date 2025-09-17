@@ -1,5 +1,5 @@
 import arcade
-from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT
+from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT, GameController
 from ui.menu import MenuView
 
 

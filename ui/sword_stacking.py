@@ -4,20 +4,15 @@ import math
 import random
 import os
 import audio_controller
-from sys import platform
+from PIL import Image
+import io
 
-UPSCALE = 4.0
+UPSCALE = 3.5  
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SWORD_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "sprites", "swords")
-SOUND_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "audio")
-
-sounds = []
-
-if platform == "darwin":
-    sounds = ["grab_sword.wav", "craft_sword_fixed.wav"]
-else:
-    sounds = ["grab_sword.wav", "craft_sword.wav"]
+SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
+SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
+sounds = ["grab_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -61,8 +56,12 @@ class SwordStacking:
             raise FileNotFoundError(f"No sword images found in {SWORD_FOLDER}")
 
         # Background texture
-        background_path = os.path.join(SCRIPT_DIR, "ressources", "backgrounds", "left_screen_background.png")
-        self.background = arcade.load_texture(background_path) if os.path.exists(background_path) else None
+        background_path = os.path.join(SCRIPT_DIR, "..", "ressources", "backgrounds", "right_screen_background.png")
+        if os.path.exists(background_path):
+            self.background = arcade.load_texture(background_path)  
+        else:
+            print(f"Background image not found at {background_path}")
+            None
 
         # Create boundaries
         self._create_boundaries()
@@ -109,19 +108,25 @@ class SwordStacking:
         self.audio.play("craft_sword", volume=0.5)
         return sprite
 
-    def remove_sword(self, sprite=None, index=None):
-        if sprite is not None and sprite in self.sprite_list:
-            self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
-            sprite.remove_from_sprite_lists()
-            self.audio.play("grab_sword", volume=0.5)
-            return True
-        elif index is not None and 0 <= index < len(self.sprite_list):
-            sprite = self.sprite_list[index]
-            self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
-            sprite.remove_from_sprite_lists()
-            self.audio.play("grab_sword", volume=3.0)
-            return True
-        return False
+    def remove_sword(self):
+        """Remove the first sword from the game"""
+        if len(self.sprite_list) == 0:
+            print("No swords to remove")
+            return False
+        
+        # Get the first sword
+        sprite = self.sprite_list[0]
+        
+        # Remove from physics space (both shape and body)
+        self.space.remove(sprite.pymunk_shape.body, sprite.pymunk_shape)
+        
+        # Remove from sprite list
+        sprite.remove_from_sprite_lists()
+        
+        # Play sound
+        self.audio.play("grab_sword", volume=1.0)
+        print("Removed first sword")
+        return True
 
     def remove_all_swords(self):
         for sprite in self.sprite_list[:]:
@@ -169,17 +174,6 @@ class SwordStacking:
                 ),
                 angle=angle_deg
             )
-
-            # Draw hitbox for debug
-            shape = sprite.pymunk_shape
-            if isinstance(shape, pymunk.Poly):
-                points = [shape.body.local_to_world(v) for v in shape.get_vertices()]
-                points = [(p.x + offset_x, p.y + offset_y) for p in points]
-                arcade.draw_line_strip(points + [points[0]], arcade.color.RED, 1)
-            elif isinstance(shape, pymunk.Circle):
-                center = shape.body.position
-                arcade.draw_circle_outline(center.x + offset_x, center.y + offset_y, shape.radius, arcade.color.RED, 1)
-
 
     def _create_boundaries(self):
         floor_height = 10
