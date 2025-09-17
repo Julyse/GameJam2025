@@ -282,6 +282,9 @@ class BigPanel(BasePanel):
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
 
+        # Draw life bar
+        
+
     def act(self):
         if self.k_lives <= 0:
             self.k_state = SpriteState.DEAD
