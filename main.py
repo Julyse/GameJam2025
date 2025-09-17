@@ -21,14 +21,22 @@ class Orchestrator(arcade.Window):
         x_cursor += w1
         panels.append(SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT))
         x_cursor += w2
-        panels.append(SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT))
+
+        self.sword_panel = SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT)
+        panels.append(self.sword_panel)
+
         return panels
 
     def start_layout(self):
         self.layout_view = LayoutView(self.build_panels())
         self.show_view(self.layout_view)
 
+    def on_key_press(self, key, modifiers):
+        if key == arcade.key.C:  # Craft sword
+            self.sword_panel.game.add_sword()
 
+        if key == arcade.key.U:  # Use sword
+            self.sword_panel.game.remove_sword(index=0)
 def main():
     Orchestrator()
     arcade.run()
