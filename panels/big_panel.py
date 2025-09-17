@@ -14,6 +14,7 @@ from random import random, gauss, uniform, choice
 from enum import Enum
 from numpy import linspace
 from pathlib import Path
+from effects import create_explosion_system
 
 
 class SpriteState(Enum):
@@ -121,6 +122,14 @@ class BigPanel(BasePanel):
         self.attack_actor_start: tuple[float, float] | None = None
         self._attack_is_projectile = False
 
+        # Explosions (animation PNGs dans resources/Explosion/X_Plosion)
+        self.explosions, self.spawn_explosion, self.update_explosions, self.draw_explosions = create_explosion_system(
+            Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
+            frame_step=2,
+        )
+        # Debug: activer pour jouer des explosions aléatoires
+        self.debug_explosions = False
+
     def on_draw(self) -> None:
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
@@ -129,6 +138,8 @@ class BigPanel(BasePanel):
         self.decorations.draw()
         self.bats.draw()
         self.sprites.draw()
+        # Dessiner les explosions
+        self.draw_explosions()
 
         msg_x = self.left + self.width / 2 - 80
         msg_y = self.bottom + self.height - 40
@@ -199,17 +210,31 @@ class BigPanel(BasePanel):
         steps = 12
         fxs = linspace(ax, tip_x, steps)
         fys = linspace(ay, tip_y, steps)
-        bxs = linspace(tip_x, ax, steps)[1:]
-        bys = linspace(tip_y, ay, steps)[1:]
-        self.attack_path = [(x, y) for x, y in zip(fxs, fys)] + [
-            (x, y) for x, y in zip(bxs, bys)
-        ]
+        if projectile:
+            # Projectile: uniquement l'aller, pas de retour
+            self.attack_path = [(x, y) for x, y in zip(fxs, fys)]
+        else:
+            # Corps-à-corps: aller-retour
+            bxs = linspace(tip_x, ax, steps)[1:]
+            bys = linspace(tip_y, ay, steps)[1:]
+            self.attack_path = [(x, y) for x, y in zip(fxs, fys)] + [
+                (x, y) for x, y in zip(bxs, bys)
+            ]
         self.attack_actor = attacker
         self.attack_actor_start = (ax, ay)
         self.attacking = True
         self._attack_is_projectile = projectile
 
     def _end_attack_anim(self) -> None:
+        # Pour les projectiles, on capture la dernière position avant tout reset
+        last_fx = None
+        last_fy = None
+        if self._attack_is_projectile and self.attack_actor is not None:
+            last_fx = self.attack_actor.center_x
+            last_fy = self.attack_actor.center_y
+        if self._attack_is_projectile and last_fx is not None and last_fy is not None:
+            # Explosion au point d'impact (dernière position atteinte)
+            self.spawn_explosion(last_fx, last_fy)
         if self.attack_actor and self.attack_actor_start:
             self.attack_actor.center_x, self.attack_actor.center_y = (
                 self.attack_actor_start
@@ -242,6 +267,12 @@ class BigPanel(BasePanel):
 
     def on_update(self, delta_time: float) -> None:
         self.dt += delta_time
+
+        # Mettre à jour les explosions
+        self.update_explosions(delta_time)
+        # Debug: explosions aléatoires
+        if self.debug_explosions and random() < 0.01:
+            self.spawn_explosion(uniform(self.left, self.right), uniform(self.bottom, self.top))
 
         if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
             if self.attacking and self._attack_is_projectile:
@@ -315,6 +346,7 @@ class BigPanel(BasePanel):
                         self.drake.center_x,
                         self.drake.center_y,
                     )
+                    # L'explosion sera jouée à l'impact (voir _end_attack_anim)
                     self.fireball.color = color.RED
                     self.k_lives = max(0, self.k_lives - 1)
                     self._start_attack_anim(self.fireball, self.knight, projectile=True)
