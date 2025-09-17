@@ -1,0 +1,228 @@
+import arcade
+import pymunk
+import math
+import random
+import os
+
+# Screen setup
+WINDOW_WIDTH = 384
+WINDOW_HEIGHT = 260
+WINDOW_TITLE = "Sword Stack Physics"
+
+# Scale factor for swords (1.0 = original size, 2.0 = double, etc.)
+UPSCALE = 5.0
+
+# Path to sword sprites folder
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SWORD_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "sprites", "swords")
+
+
+class PhysicsSprite(arcade.Sprite):
+    def __init__(self, pymunk_shape, filename, scale=1.0):
+        super().__init__(
+            filename,
+            scale=scale,
+            center_x=pymunk_shape.body.position.x,
+            center_y=pymunk_shape.body.position.y,
+        )
+        self.pymunk_shape = pymunk_shape
+
+
+class GameView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.background_color = arcade.color.DARK_SLATE_GRAY
+
+        # Load background texture
+        try:
+            background_path = os.path.join(SCRIPT_DIR, "ressources", "backgrounds", "left_screen_background.png")
+            self.background = arcade.load_texture(background_path)
+        except FileNotFoundError:
+            self.background = None  # No background if file not found
+
+        # Physics
+        self.space = pymunk.Space()
+        self.space.iterations = 10  # Reduced from 35 for better performance
+        self.space.gravity = (0.0, -900.0)
+        
+        # Physics update timing
+        self.physics_time = 0.0
+        self.physics_step = 1 / 30.0  # 30 FPS physics instead of 60
+
+        self.sprite_list: arcade.SpriteList[PhysicsSprite] = arcade.SpriteList()
+        self.static_lines = []
+
+        # Load available sword images
+        self.sword_files = [
+            os.path.join(SWORD_FOLDER, f)
+            for f in os.listdir(SWORD_FOLDER)
+            if f.lower().endswith((".png", ".jpg"))
+        ]
+
+        if not self.sword_files:
+            raise FileNotFoundError(f"No sword images found in {SWORD_FOLDER}")
+
+        # Create static boundaries
+        self._create_boundaries()
+
+    def add_sword(self, x=None, y=None, angle=None):
+        """Add a sword at specified position and angle, or random if not specified"""
+        mass = 1.0
+        width, height = 32 * UPSCALE, 8 * UPSCALE
+
+        # Use provided position or random spawn position
+        if x is None:
+            x = random.randint(40, WINDOW_WIDTH - 40)
+        if y is None:
+            y = random.randint(WINDOW_HEIGHT // 2, WINDOW_HEIGHT - 20)
+        if angle is None:
+            angle = random.uniform(0, 2 * math.pi)
+
+        # Create physics body and shape
+        body = pymunk.Body(mass, pymunk.moment_for_box(mass, (width, height)))
+        body.position = x, y
+        body.angle = angle
+
+        shape = pymunk.Poly.create_box(body, (width, height))
+        shape.friction = 0.6
+        shape.elasticity = 0.1
+        self.space.add(body, shape)
+
+        # Load texture with pixel-perfect filtering
+        sword_file = random.choice(self.sword_files)
+        
+        # Create sprite first
+        sprite = PhysicsSprite(shape, sword_file, scale=UPSCALE)
+        
+        # Load texture normally, then set the OpenGL filtering
+        texture = arcade.load_texture(sword_file)
+        sprite.texture = texture
+        
+        # Set pixel-perfect filtering on the underlying OpenGL texture
+        if hasattr(texture, 'texture') and hasattr(texture.texture, 'filter'):
+            texture.texture.filter = (arcade.gl.NEAREST, arcade.gl.NEAREST)
+        
+        sprite.angle = -math.degrees(angle) + 90  # +90 because sword PNG points up
+        self.sprite_list.append(sprite)
+        
+        return sprite  # Return the created sprite for reference
+
+    def remove_sword(self, sprite=None, index=None):
+        """Remove a specific sword sprite or sword at index"""
+        if sprite is not None:
+            # Remove specific sprite
+            if sprite in self.sprite_list:
+                self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
+                sprite.remove_from_sprite_lists()
+                return True
+        elif index is not None:
+            # Remove sword at specific index
+            if 0 <= index < len(self.sprite_list):
+                sprite = self.sprite_list[index]
+                self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
+                sprite.remove_from_sprite_lists()
+                return True
+        return False
+
+    def remove_all_swords(self):
+        """Remove all swords from the game"""
+        for sprite in self.sprite_list[:]:  # Create a copy to iterate safely
+            self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
+            sprite.remove_from_sprite_lists()
+
+    def get_sword_count(self):
+        """Get the current number of swords in the game"""
+        return len(self.sprite_list)
+
+    def get_swords(self):
+        """Get a list of all current sword sprites"""
+        return list(self.sprite_list)
+
+    def _create_boundaries(self):
+        """Create floor and invisible side walls"""
+        # Floor
+        floor_height = 10
+        floor_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        floor_shape = pymunk.Segment(floor_body, [0, floor_height], [WINDOW_WIDTH, floor_height], 0.0)
+        floor_shape.friction = 1.0
+        self.space.add(floor_body, floor_shape)
+        #self.static_lines.append(floor_shape)
+        
+        # Left wall (invisible)
+        left_wall_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        left_wall_shape = pymunk.Segment(left_wall_body, [0, 0], [0, WINDOW_HEIGHT], 0.0)
+        left_wall_shape.friction = 0.7
+        self.space.add(left_wall_body, left_wall_shape)
+        
+        # Right wall (invisible)
+        right_wall_body = pymunk.Body(body_type=pymunk.Body.STATIC)
+        right_wall_shape = pymunk.Segment(right_wall_body, [WINDOW_WIDTH, 0], [WINDOW_WIDTH, WINDOW_HEIGHT], 0.0)
+        right_wall_shape.friction = 0.7
+        self.space.add(right_wall_body, right_wall_shape)
+
+    def on_draw(self):
+        self.clear()
+        
+        # Draw background if available
+        if self.background:
+            arcade.draw_texture_rect(
+                self.background,
+                arcade.LBWH(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT),
+            )
+        else :
+            print("Background image not found, skipping background draw.")
+        
+        self.sprite_list.draw()
+
+        # Draw floor only (walls are invisible)
+        for line in self.static_lines:
+            body = line.body
+            pv1 = body.position + line.a.rotated(body.angle)
+            pv2 = body.position + line.b.rotated(body.angle)
+            arcade.draw_line(pv1.x, pv1.y, pv2.x, pv2.y, arcade.color.WHITE, 2)
+
+        # Draw Pymunk collision shapes (optional - remove if you don't want debug lines)
+        for sprite in self.sprite_list:
+            shape = sprite.pymunk_shape
+            if isinstance(shape, pymunk.Poly):
+                points = [shape.body.local_to_world(v) for v in shape.get_vertices()]
+                points_tuple = [(p.x, p.y) for p in points]
+                arcade.draw_line_strip(points_tuple + [points_tuple[0]], arcade.color.RED, 1)
+            elif isinstance(shape, pymunk.Circle):
+                center = shape.body.position
+                arcade.draw_circle_outline(center.x, center.y, shape.radius, arcade.color.RED, 1)
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            # Use the new add_sword method
+            self.add_sword()
+
+    def on_update(self, delta_time: float):
+        # Accumulate time for physics updates
+        self.physics_time += delta_time
+        
+        # Only update physics at reduced rate
+        while self.physics_time >= self.physics_step:
+            self.space.step(self.physics_step)
+            self.physics_time -= self.physics_step
+        
+        # Update sprite positions and rotation (visual updates still at full framerate)
+        for sprite in self.sprite_list:
+            if sprite.pymunk_shape.body.position.y < -50:
+                self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
+                sprite.remove_from_sprite_lists()
+            else:
+                sprite.center_x = sprite.pymunk_shape.body.position.x
+                sprite.center_y = sprite.pymunk_shape.body.position.y
+                sprite.angle = -math.degrees(sprite.pymunk_shape.body.angle) + 90
+
+
+def main():
+    window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
+    game = GameView()
+    window.show_view(game)
+    arcade.run()
+
+
+if __name__ == "__main__":
+    main()
