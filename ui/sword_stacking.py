@@ -4,12 +4,14 @@ import math
 import random
 import os
 import audio_controller
+from PIL import Image
+import io
 
-UPSCALE = 4.0
+UPSCALE = 3.5  
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-SWORD_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "sprites", "swords")
-SOUND_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "audio")
+SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
+SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
 sounds = ["grab_sword.wav", "craft_sword.wav"]
 
 
@@ -54,8 +56,12 @@ class SwordStacking:
             raise FileNotFoundError(f"No sword images found in {SWORD_FOLDER}")
 
         # Background texture
-        background_path = os.path.join(SCRIPT_DIR, "ressources", "backgrounds", "left_screen_background.png")
-        self.background = arcade.load_texture(background_path) if os.path.exists(background_path) else None
+        background_path = os.path.join(SCRIPT_DIR, "..", "ressources", "backgrounds", "right_screen_background.png")
+        if os.path.exists(background_path):
+            self.background = arcade.load_texture(background_path)  
+        else:
+            print(f"Background image not found at {background_path}")
+            None
 
         # Create boundaries
         self._create_boundaries()

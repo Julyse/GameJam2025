@@ -14,6 +14,7 @@ class GameController(arcade.View):
         super().__init__()
         self.panels = panels
         self.state = GameState.GAME
+        
 
     def on_show_view(self):
         arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
@@ -31,13 +32,27 @@ class GameController(arcade.View):
         for p in self.panels:
             if hasattr(p, "on_key_press"):
                 p.on_key_press(key, modifiers)
+    def start_game(self):
+        self.controller = GameController.start_game(self)
+    def on_key_press(self, key, modifiers):
+        for p in self.panels:
+            if hasattr(p, "on_key_press"):
+                p.on_key_press(key, modifiers)
 
+        if key == arcade.key.C: 
+            print("Craft une épée")
+            self.sword_panel.game.add_sword()
+
+        if key == arcade.key.U: 
+            print("Utilise une épée")
+            self.sword_panel.game.remove_sword()
     @staticmethod
     def start_game(window: arcade.Window):
-        controller = GameController(build_default_panels())
-        window.show_view(controller)
+        panels, sword_panel = build_default_panels()
+        controller = GameController(panels)
+        controller.sword_panel = sword_panel 
+        window.show_view(controller)        
         return controller
-
 
 def build_default_panels() -> list[BasePanel]:
     panels: list[BasePanel] = []
@@ -50,5 +65,6 @@ def build_default_panels() -> list[BasePanel]:
     x_cursor += w1
     panels.append(SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT))
     x_cursor += w2
-    panels.append(SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT))
-    return panels
+    sword_panel = SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT)
+    panels.append(sword_panel)
+    return panels, sword_panel

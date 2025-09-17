@@ -1,5 +1,5 @@
 import arcade
-from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT
+from game_controller import SCREEN_WIDTH, SCREEN_HEIGHT, GameController
 from ui.menu import MenuView
 
 
@@ -10,6 +10,7 @@ class GameWindow(arcade.Window):
 
     def show_menu(self):
         self.show_view(MenuView())
+
 
 def main():
     GameWindow()
