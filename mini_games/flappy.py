@@ -147,7 +147,7 @@ class FlappyGame:
         #                      anchor_x="center", anchor_y="center")
 
         if not self.started:
-            text = "Appuyer sur espace"
+            text = "Appuyez sur espace"
             arcade.draw_text(
                 text,
                 self.panel_w / 2 + offset_x,  # X center

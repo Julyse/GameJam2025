@@ -59,7 +59,7 @@ class SmallPanel2(BasePanel):
                 bold=True,
             )
             arcade.draw_text(
-                "Press SPACE for next minigame",
+                "Appuyez sur espace pour continuer",
                 self.left + self.width / 2,
                 self.bottom + self.height / 2 - 40,
                 arcade.color.WHITE,

@@ -235,7 +235,7 @@ class Undertale:
             hitbox.center_x, hitbox.center_y = hitbox_positions[i]
 
         if not self.started:
-            text = "Appuyer sur Z/Q/S/D ou les flèches directionnels"
+            text = "Appuyez sur Z/Q/S/D ou les flèches directionnels"
             arcade.draw_text(
                 text,
                 self.screen_width / 2 + offset_x,  # X center
