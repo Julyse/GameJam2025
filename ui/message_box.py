@@ -16,9 +16,9 @@ class MessageBox:
         font_name: str | None = "Righteous",
         font_size: int = 18,
         padding: int = 16,
-        background_color: arcade.Color = arcade.color.DARK_SLATE_GRAY,
-        border_color: arcade.Color = arcade.color.LIGHT_GRAY,
-        text_color: arcade.Color = arcade.color.WHITE,
+        background_color: arcade.color = arcade.color.DARK_SLATE_GRAY,
+        border_color: arcade.color = arcade.color.LIGHT_GRAY,
+        text_color: arcade.color = arcade.color.WHITE,
         border_width: int = 2,
         corner_radius: int = 8,
     ) -> None:
