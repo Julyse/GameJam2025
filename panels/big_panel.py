@@ -217,12 +217,6 @@ class CombatEncounter:
         self.dragon_hp -= 1
         print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/20, Swords: {len(self.sword_inventory)}")
         
-        # Spawn small explosion on dragon as impact effect
-        self.panel.spawn_explosion(
-            self.panel.drake.center_x + uniform(-20, 20),
-            self.panel.drake.center_y + uniform(-20, 20)
-        )
-        
         # Check for dragon death
         if self.dragon_hp <= 0:
             self._on_dragon_death()
@@ -272,18 +266,8 @@ class CombatEncounter:
                 
     def draw_hud(self, panel):
         """Draw HP bars and combat info"""
-        # Hero HP
-        hp_y = panel.bottom + panel.height - 40
-        draw_text(f"Hero HP: {self.hero_hp}/10", 
-                 panel.left + 20, hp_y,
-                 color.WHITE, 18, font_name=("Righteous", "arial", "calibri"))
-        
-        # Dragon HP  
-        draw_text(f"Dragon HP: {self.dragon_hp}/20",
-                 panel.left + 200, hp_y, 
-                 color.WHITE, 18, font_name=("Righteous", "arial", "calibri"))
-        
         # Sword inventory
+        hp_y = panel.bottom + panel.height - 40
         sword_text = f"Swords: {len(self.sword_inventory)}"
         if self.sword_inventory:
             durabilities = [str(d) for d in self.sword_inventory]
@@ -311,7 +295,7 @@ class CombatEncounter:
             draw_text("GAME OVER", center_x, center_y,
                      color.RED, 48, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
-            draw_text("The hero has fallen...", center_x, center_y - 60,
+            draw_text("Le hero a perdu...", center_x, center_y - 60,
                      color.RED, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
                      
@@ -319,7 +303,7 @@ class CombatEncounter:
             draw_text("VICTORY", center_x, center_y,
                      color.GREEN, 48, anchor_x="center", anchor_y="center", 
                      font_name=("Righteous", "arial", "calibri"))
-            draw_text("The dragon is defeated!", center_x, center_y - 60,
+            draw_text("Le dragon est vaincu !", center_x, center_y - 60,
                      color.GREEN, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
 
