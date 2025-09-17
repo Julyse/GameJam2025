@@ -18,17 +18,24 @@ class MenuView(arcade.View):
         v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         title_label = arcade.gui.UILabel(
-            text="Forgeron du donjon",
+            text="Le Faiseur d'epees",
             width=450,
             height=40,
             font_size=28,
             text_color=arcade.color.WHITE,
+            font_name=("Righteous", "arial", "calibri"),
         )
         v_box.add(title_label)
 
-        start_button = arcade.gui.UIFlatButton(text="Lancer le jeu", width=220)
-        options_button = arcade.gui.UIFlatButton(text="Options", width=220)
-        quit_button = QuitButton(text="Quitter", width=220)
+        righteous_style = {
+            "normal": arcade.gui.widgets.buttons.UIFlatButton.UIStyle(font_name=("Righteous", "arial", "calibri"), font_size=14),
+            "hover": arcade.gui.widgets.buttons.UIFlatButton.UIStyle(font_name=("Righteous", "arial", "calibri"), font_size=14),
+            "press": arcade.gui.widgets.buttons.UIFlatButton.UIStyle(font_name=("Righteous", "arial", "calibri"), font_size=14),
+            "disabled": arcade.gui.widgets.buttons.UIFlatButton.UIStyle(font_name=("Righteous", "arial", "calibri"), font_size=14),
+        }
+        start_button = arcade.gui.UIFlatButton(text="Jouer", width=220, style=righteous_style)
+        options_button = arcade.gui.UIFlatButton(text="Options", width=220, style=righteous_style)
+        quit_button = QuitButton(text="Quitter", width=220, style=righteous_style)
 
         v_box.add(start_button)
         v_box.add(options_button)

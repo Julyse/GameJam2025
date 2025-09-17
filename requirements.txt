@@ -4,7 +4,7 @@ black==25.1.0
 cffi==2.0.0
 click==8.2.1
 mypy_extensions==1.1.0
-numpy==2.3.3
+numpy
 packaging==25.0
 pathspec==0.12.1
 pillow==11.0.0
