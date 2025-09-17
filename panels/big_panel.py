@@ -1,52 +1,331 @@
 from .base_panel import BasePanel
-import arcade
-from arcade import Sprite, SpriteList, color, draw_text
-from math import pi
-from random import random, gauss
+from arcade import (
+    Sprite,
+    SpriteList,
+    Texture,
+    color,
+    draw_text,
+    load_texture,
+    draw_texture_rect,
+    load_animated_gif,
+)
+from math import cos, pi, sin
+from random import random, gauss, uniform, choice
+from enum import Enum
+from numpy import linspace
+from pathlib import Path
+
+
+class SpriteState(Enum):
+    STANDBY = 1
+    ATTACKING = 2
+    DEFENDING = 3
+    DEAD = 4
+    FLEEING = 5
+
+
+class Character(Sprite):
+    def update(self, delta_time: float = 1 / 60, p_x=0, p_y=0, *args, **kwargs) -> None:
+        self.center_x -= p_x
+        self.center_y -= p_y
 
 
 class BigPanel(BasePanel):
     def __init__(self, x: int, y: int, width: int, height: int):
-        super().__init__(x=x, y=y, width=width, height=height, color=arcade.color.AIR_FORCE_BLUE, label="Grand écran")
 
-        # --- Contenu "Arena" embarqué ---
+        super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
+
         self.sprites = SpriteList()
+        self.knight = Character()
+        self.drake = Character(
+            path_or_texture=Path(__file__).parent.parent / "resources" / "drake.png"
+        )
+        self.sword = Sprite()
+        
+        self.fireball = Character(path_or_texture=Path(__file__).parent.parent / "resources" / "fire1.gif")
+        self.fireball.append_texture(load_texture(Path(__file__).parent.parent / "resources" / "fire2_1.gif"))
 
-        center_x = self.left + self.width / 2
-        center_y = self.bottom + self.height / 2
+        center_x = self.width / 2 + x
+        center_y = self.height / 2 + y
 
-        self.knight = Sprite()
-        self.knight.position = (center_x, center_y + center_y / 2)
+        padding = uniform(200, 350)
 
-        self.drake = Sprite()
-        self.drake.position = (center_x, center_y / 2)
+        self.knight.position = (center_x - padding, center_y)
+        self.drake.position = (center_x + padding, center_y)
 
-        self.sprites.append(self.knight)
-        self.sprites.append(self.drake)
+        self.fireball.position = (self.drake.center_x, self.drake.center_y)
+        self.fireball.multiply_scale(1.25)
+        self.fireball.angle = 90.0
+        self.fireball.color = color.TRANSPARENT_BLACK
 
-        # Décors
+        self.knight_ipos = (self.knight.center_x, self.knight.center_y)
+        self.drake_ipos = (self.drake.center_x, self.drake.center_y)
+
+        self.sword.position = (center_x - padding + 100, center_y + 20)
+
+        self.drake.texture = self.drake.texture.flip_horizontally()
+
+        self.k_state = SpriteState.STANDBY
+        self.d_state = SpriteState.STANDBY
+        self.s_state = SpriteState.STANDBY
+
+        self.k_lives = 5
+        self.d_lives = 10
+        self.s_lives = 4
+        self.s_strength = 1
+
+        self.sword.width /= 4
+        self.drake.multiply_scale(2)
+        self.sword.angle = 40
+
+        self._init_knight_gifs()
+        self.bg_tex = load_texture(
+            Path(__file__).parent.parent / "resources" / "main_bg.png"
+        )
+
         self.n_dec = 30
+
         x_normal = [gauss(self.width / 2, self.width / 2) for _ in range(self.n_dec)]
         y_normal = [gauss(self.height / 2, self.height / 2) for _ in range(self.n_dec)]
 
+        self.decorations = SpriteList()
+
         for i in range(self.n_dec):
             dec = Sprite()
-            r_scale = random() / 2
-            dec.scale = r_scale
+            dec.scale = random() / 2
             dec.angle = 2 * pi * random()
-
-            # Position relative au panel
             dec.position = (self.left + x_normal[i], self.bottom + y_normal[i])
-            self.sprites.append(dec)
+            # self.sprites.append(dec)
+            self.decorations.append(dec)
 
-    def on_update(self, delta_time: float) -> None:
-        # Logique d'update future pour les sprites
-        pass
+        self.sprites.append(self.drake)
+        self.sprites.append(self.fireball)
+
+        self.dt = 0.0
+        self.curr = 0
+        self.attacking = False
+        self.attack_actor: Sprite | None = None
+        self.attack_path: list[tuple[float, float]] = []
+        self.attack_actor_start: tuple[float, float] | None = None
+        self._attack_is_projectile = False
 
     def on_draw(self) -> None:
-        # Dessin du fond + label par la classe de base
         super().on_draw()
-        # Dessin du contenu Arena dans la zone du panel
-        self.sprites.draw()
-        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK)
+        draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
+        draw_texture_rect(self.bg_tex, self.rect)
 
+        self.decorations.draw()
+        self.sprites.draw()
+
+        msg_x = self.left + self.width / 2 - 80
+        msg_y = self.bottom + self.height - 40
+
+        if self.s_lives <= 0:
+            draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
+            self.knight.set_texture(1)
+            msg_y -= 25
+        if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
+            draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
+            msg_y -= 25
+        if self.d_lives <= 0 or self.d_state == SpriteState.DEAD:
+            draw_text("The drake is dead!", msg_x, msg_y, color.RED, 16)
+
+    def set_ball_type(type: any): # type: ignore
+        pass
+
+    def _init_knight_gifs(self) -> None:
+        base = (
+            Path(__file__).parent.parent
+            / "resources/knight/Colour1/Outline/120x80_gifs"
+        )
+
+        L = lambda n: load_animated_gif(base / n)
+
+        self.k_gifs = {
+            SpriteState.STANDBY: L("__Idle.gif"),
+            SpriteState.ATTACKING: L("__Attack.gif"),
+            SpriteState.DEFENDING: L("__DeathNoMovement.gif"),
+            SpriteState.FLEEING: L("__Run.gif"),
+            SpriteState.DEAD: L("__Death.gif"),
+        }
+        for g in self.k_gifs.values():
+            g.multiply_scale(4)
+
+            g.center_x, g.center_y = self.knight.center_x, self.knight.center_y
+            g.visible = False
+
+            self.sprites.append(g)
+        self._apply_knight_gif()
+
+    def _apply_knight_gif(self) -> None:
+        for g in self.k_gifs.values():
+            g.visible = False
+        self.k_gifs[self.k_state].visible = True
+
+    def _sync_knight_gif_pos(self) -> None:
+        for g in self.k_gifs.values():
+            g.center_x, g.center_y = self.knight.center_x, self.knight.center_y
+
+    def _start_attack_anim(
+        self,
+        attacker: Sprite,
+        defender: Sprite,
+        *,
+        stop_before: float = 40.0,
+        projectile: bool = False,
+    ) -> None:
+        ax, ay = attacker.center_x, attacker.center_y
+        dx, dy = defender.center_x, defender.center_y
+        vx, vy = dx - ax, dy - ay
+        dist = max((vx * vx + vy * vy) ** 0.5, 1e-6)
+        if projectile:
+            tip_x, tip_y = dx, dy
+        else:
+            tip_x = dx - vx / dist * stop_before
+            tip_y = dy - vy / dist * stop_before
+        steps = 12
+        fxs = linspace(ax, tip_x, steps)
+        fys = linspace(ay, tip_y, steps)
+        bxs = linspace(tip_x, ax, steps)[1:]
+        bys = linspace(tip_y, ay, steps)[1:]
+        self.attack_path = [(x, y) for x, y in zip(fxs, fys)] + [
+            (x, y) for x, y in zip(bxs, bys)
+        ]
+        self.attack_actor = attacker
+        self.attack_actor_start = (ax, ay)
+        self.attacking = True
+        self._attack_is_projectile = projectile
+
+    def _end_attack_anim(self) -> None:
+        if self.attack_actor and self.attack_actor_start:
+            self.attack_actor.center_x, self.attack_actor.center_y = (
+                self.attack_actor_start
+            )
+        if self._attack_is_projectile:
+            self.fireball.color = color.TRANSPARENT_BLACK
+            self.fireball.center_x, self.fireball.center_y = (
+                self.drake.center_x,
+                self.drake.center_y,
+            )
+        self.attacking = False
+        self._attack_is_projectile = False
+        self.attack_actor = None
+        self.attack_actor_start = None
+        if self.k_lives > 0:
+            self.k_state = SpriteState.STANDBY
+        if self.d_lives > 0:
+            self.d_state = SpriteState.STANDBY
+        self._apply_knight_gif()
+
+    def _tick_attack_anim(self) -> None:
+        if not self.attacking or not self.attack_actor:
+            return
+        if not self.attack_path:
+            self._end_attack_anim()
+            return
+        nx, ny = self.attack_path.pop(0)
+        self.attack_actor.center_x = nx
+        self.attack_actor.center_y = ny
+
+    def on_update(self, delta_time: float) -> None:
+        self.dt += delta_time
+
+        if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
+            if self.attacking and self._attack_is_projectile:
+                self._end_attack_anim()
+            if self.k_lives <= 0:
+                self.k_state = SpriteState.DEAD
+                self._apply_knight_gif()
+            self._sync_knight_gif_pos()
+            if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
+                self.k_gifs[self.k_state].update_animation(delta_time)
+            return
+
+        if self.attacking:
+            self._tick_attack_anim()
+        else:
+            if self.dt > 1.5:
+                self.act()
+                self.dt = 0.0
+
+                # randomly shuffle positions of the decoration
+            if random() < .05:
+                for dec in self.decorations:
+                    base_x, base_y = dec.position
+                    offset_x = (
+                        sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
+                    )
+                    offset_y = (
+                        cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
+                    )
+
+                    new_x = base_x + offset_x
+                    new_y = base_y + offset_y
+
+                    new_x = min(max(new_x, self.left), self.right)
+                    new_y = min(max(new_y, self.bottom), self.top)
+
+                    dec.center_x, dec.center_y = new_x, new_y
+        self._sync_knight_gif_pos()
+        if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
+            self.k_gifs[self.k_state].update_animation(delta_time)
+
+    def act(self):
+        if self.k_lives <= 0:
+            self.k_state = SpriteState.DEAD
+        if self.d_lives <= 0:
+            self.d_state = SpriteState.DEAD
+        if self.k_state == SpriteState.DEAD or self.d_state == SpriteState.DEAD:
+            self._apply_knight_gif()
+            return
+        sprites = [self.knight, self.drake]
+        curr_sprite = sprites[self.curr]
+        curr_state = self.k_state if curr_sprite is self.knight else self.d_state
+        choices = [s for s in SpriteState if s not in (curr_state, SpriteState.DEAD)]
+        n_state = choice(choices) if choices else SpriteState.STANDBY
+        match n_state:
+            case SpriteState.STANDBY:
+                pass
+            case SpriteState.ATTACKING:
+                if curr_sprite is self.knight:
+                    self.d_lives = max(0, self.d_lives - self.s_strength)
+                    self.s_lives = max(0, self.s_lives - 1)
+                    self._start_attack_anim(
+                        self.knight, self.drake, stop_before=40.0, projectile=False
+                    )
+                    self.k_state = SpriteState.ATTACKING
+                    self._apply_knight_gif()
+                else:
+                    self.fireball.center_x, self.fireball.center_y = (
+                        self.drake.center_x,
+                        self.drake.center_y,
+                    )
+                    self.fireball.color = color.RED
+                    self.k_lives = max(0, self.k_lives - 1)
+                    self._start_attack_anim(self.fireball, self.knight, projectile=True)
+                    self.d_state = SpriteState.ATTACKING
+            case SpriteState.DEFENDING:
+                if random() > 0.33:
+                    if curr_sprite is self.knight:
+                        self.k_lives = max(0, self.k_lives - 1)
+                    else:
+                        self.d_lives = max(0, self.d_lives - 1)
+                if curr_sprite is self.knight:
+                    self.k_state = SpriteState.DEFENDING
+                    self._apply_knight_gif()
+            case SpriteState.FLEEING:
+                step = 25
+                if curr_sprite is self.knight:
+                    self.knight.center_x -= step
+                    self.k_state = SpriteState.FLEEING
+                    self._apply_knight_gif()
+                else:
+                    self.drake.center_x += step
+            case _:
+                pass
+        if n_state != SpriteState.ATTACKING and curr_sprite is self.knight:
+            self.k_state = n_state
+            self._apply_knight_gif()
+        elif n_state != SpriteState.ATTACKING and curr_sprite is self.drake:
+            self.d_state = n_state
+        self.curr ^= 1

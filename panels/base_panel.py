@@ -8,8 +8,6 @@ class BasePanel(Section):
         self.color = color
         self.label = label
 
-    def on_update(self, delta_time: float) -> None:
-        pass
 
     def on_draw(self) -> None:
         arcade.draw_lrbt_rectangle_filled(
@@ -25,5 +23,6 @@ class BasePanel(Section):
             self.bottom + (self.height // 2) - 12,
             arcade.color.WHITE,
             20,
+            font_name=("Righteous", "arial", "calibri"),
         )
 
