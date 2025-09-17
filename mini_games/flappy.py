@@ -144,7 +144,7 @@ class FlappyGame:
                 self.started = True
             self.bird_velocity = self.flap_strength
 
-    def on_key_release():
+    def on_key_release(self, key, modifiers):
         pass
 
     # ----------------------- helper interne -----------------------

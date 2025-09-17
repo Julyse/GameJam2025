@@ -12,8 +12,8 @@ class SmallPanel2(BasePanel):
 
         #pick dragon state depending on the game
 
-        # self.game = FlappyGame(width, height, mode=VisualMode.LAVA)
-        self.game = Undertale(width, height, DragonState.FIRE)
+        self.game = FlappyGame(width, height, mode=VisualMode.LAVA)
+        #self.game = Undertale(width, height, DragonState.NORMAL)
 
         # On n'utilise pas push_handlers car la propagation des événements
         # est gérée par LayoutView qui appelle on_key_press et on_key_release
