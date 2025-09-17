@@ -10,7 +10,7 @@ UPSCALE = 4.0
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SWORD_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "audio")
-sounds = ["grab_sword.wav", "drop_sword.wav"]
+sounds = ["grab_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -99,7 +99,7 @@ class SwordStacking:
         sprite.angle = -math.degrees(angle) + 90
         self.sprite_list.append(sprite)
 
-        self.audio.play("drop_sword", volume=0.5)
+        self.audio.play("craft_sword", volume=0.5)
         return sprite
 
     def remove_sword(self, sprite=None, index=None):
@@ -112,7 +112,7 @@ class SwordStacking:
             sprite = self.sprite_list[index]
             self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
             sprite.remove_from_sprite_lists()
-            self.audio.play("grab_sword", volume=0.5)
+            self.audio.play("grab_sword", volume=3.0)
             return True
         return False
 
@@ -146,12 +146,12 @@ class SwordStacking:
                 self.background,
                 arcade.LBWH(offset_x, offset_y, self.width, self.height)
             )
-    
+
         # Draw all swords
         for sprite in self.sprite_list:
             # Use the current physics angle
             angle_deg = -math.degrees(sprite.pymunk_shape.body.angle) + 90
-    
+
             arcade.draw_texture_rect(
                 sprite.texture,
                 arcade.LBWH(
@@ -162,7 +162,7 @@ class SwordStacking:
                 ),
                 angle=angle_deg
             )
-    
+
             # Draw hitbox for debug
             shape = sprite.pymunk_shape
             if isinstance(shape, pymunk.Poly):
