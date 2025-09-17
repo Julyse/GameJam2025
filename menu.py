@@ -2,6 +2,7 @@ import arcade
 import arcade.gui
 import arcade.gui.widgets.buttons
 import arcade.gui.widgets.layout
+from enums.game_state import GameState
 import arcade.gui.widgets.text
 from mini_games.valve import ValveGame  # ton mini-jeu
 
@@ -24,7 +25,7 @@ class Game(arcade.Window):
         self.manager = arcade.gui.UIManager()
         self.manager.enable()
 
-        self.status = ["menu","cinematic","game"]
+        self.status = GameState.MENU
         self.current_minigame = None
 
         # --- Créer layout vertical pour les boutons
@@ -65,7 +66,7 @@ class Game(arcade.Window):
 
     def on_click_start(self, event):
         print("Mini-jeu lancé !")
-        self.status = "game"
+        self.status = GameState.GAME
         
 
     def on_draw(self):
