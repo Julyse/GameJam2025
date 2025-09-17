@@ -4,13 +4,20 @@ import math
 import random
 import os
 import audio_controller
+from sys import platform
 
 UPSCALE = 4.0
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SWORD_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "ressources", "audio")
-sounds = ["grab_sword.wav", "craft_sword.wav"]
+
+sounds = []
+
+if platform == "darwin":
+    sounds = ["grab_sword.wav", "craft_sword_fixed.wav"]
+else:
+    sounds = ["grab_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
