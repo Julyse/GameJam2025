@@ -10,8 +10,6 @@ class GameWindow(arcade.Window):
     def show_menu(self):
         self.show_view(MenuView())
 
-        if key == arcade.key.U:  # Use sword
-            self.sword_panel.game.remove_sword(index=0)
 def main():
     GameWindow()
     arcade.run()
