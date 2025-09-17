@@ -83,20 +83,32 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent / "resources" / "main_bg.png"
         )
 
-        self.n_dec = 30
+        self.n_dec = 20
 
         x_normal = [gauss(self.width / 2, self.width / 2) for _ in range(self.n_dec)]
-        y_normal = [gauss(self.height / 2, self.height / 2) for _ in range(self.n_dec)]
+        #y_normal = [gauss(self.height / 3, self.height / 2) for _ in range(self.n_dec)]
+        y_normal = linspace(0, self.width, self.n_dec)
 
         self.decorations = SpriteList()
+        self.bats = SpriteList()
 
-        for i in range(self.n_dec):
-            dec = Sprite()
-            dec.scale = random() / 2
+        decorations_text = [x for x in (Path(__file__).parent.parent / "resources" / "Props").iterdir() if x.name != "misc_scenery.png"]
+        bats_text = [x for x in (Path(__file__).parent.parent / "resources" / "Entities" / "Bats").iterdir()]
+        print(decorations_text)
+
+        for i in range(int(self.n_dec)):
+            dec = Sprite(path_or_texture=choice(decorations_text))
             dec.angle = 2 * pi * random()
-            dec.position = (self.left + x_normal[i], self.bottom + y_normal[i])
-            # self.sprites.append(dec)
+            dec.position = (self.left + x_normal[i], self.window.height - self.height + 20)
             self.decorations.append(dec)
+
+        for i in range(int(self.n_dec / 2)):
+            dec = Sprite(path_or_texture=choice(bats_text))
+            dec.angle = 2 * pi * random()
+            dec.scale = uniform(1.25, 2.1)
+            dec.position = (self.left + x_normal[int(i + self.n_dec / 2)], self.bottom + y_normal[int(i + self.n_dec / 2)])
+            self.bats.append(dec)
+        
 
         self.sprites.append(self.drake)
         self.sprites.append(self.fireball)
@@ -115,6 +127,7 @@ class BigPanel(BasePanel):
         draw_texture_rect(self.bg_tex, self.rect)
 
         self.decorations.draw()
+        self.bats.draw()
         self.sprites.draw()
 
         msg_x = self.left + self.width / 2 - 80
@@ -241,6 +254,23 @@ class BigPanel(BasePanel):
                 self.k_gifs[self.k_state].update_animation(delta_time)
             return
 
+
+            # randomly shuffle positions of the decoration
+        if random() < .4:
+            for dec in self.bats:
+                base_x, base_y = dec.position
+                offset_x = (
+                    sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
+                )
+                offset_y = (
+                    cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
+                )
+                new_x = base_x + offset_x
+                new_y = base_y + offset_y
+                new_x = min(max(new_x, self.left), self.right)
+                new_y = min(max(new_y, self.bottom), self.top)
+                dec.center_x, dec.center_y = new_x, new_y
+
         if self.attacking:
             self._tick_attack_anim()
         else:
@@ -248,24 +278,6 @@ class BigPanel(BasePanel):
                 self.act()
                 self.dt = 0.0
 
-                # randomly shuffle positions of the decoration
-            if random() < .05:
-                for dec in self.decorations:
-                    base_x, base_y = dec.position
-                    offset_x = (
-                        sin(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 5
-                    )
-                    offset_y = (
-                        cos(self.dt * uniform(0.5, 1.5) + uniform(0, 2 * pi)) * 3
-                    )
-
-                    new_x = base_x + offset_x
-                    new_y = base_y + offset_y
-
-                    new_x = min(max(new_x, self.left), self.right)
-                    new_y = min(max(new_y, self.bottom), self.top)
-
-                    dec.center_x, dec.center_y = new_x, new_y
         self._sync_knight_gif_pos()
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
