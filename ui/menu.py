@@ -2,7 +2,6 @@ import arcade
 import arcade.gui
 import arcade.gui.widgets.buttons
 import arcade.gui.widgets.layout
-from enums.game_state import GameState
 from ui.cinematic import CinematicView
 from dialogues.start_dialogues import START_DIALOGUES
 
@@ -47,8 +46,6 @@ class MenuView(arcade.View):
         anchor.add(child=v_box, anchor_x="center_x", anchor_y="center_y")
         self.manager.add(anchor)
 
-        self.state = GameState.MENU
-
     def on_show_view(self):
         arcade.set_background_color(arcade.color.DARK_BLUE_GRAY)
 
@@ -57,7 +54,6 @@ class MenuView(arcade.View):
         self.manager.draw()
 
     def start_cinematic(self):
-        self.state = GameState.CINEMATIC
         if hasattr(self.manager, "disable"):
             self.manager.disable()
         if hasattr(self.manager, "clear"):
