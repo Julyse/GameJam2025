@@ -108,19 +108,25 @@ class SwordStacking:
         self.audio.play("craft_sword", volume=0.5)
         return sprite
 
-    def remove_sword(self, sprite=None, index=None):
-        if sprite is not None and sprite in self.sprite_list:
-            self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
-            sprite.remove_from_sprite_lists()
-            self.audio.play("grab_sword", volume=0.5)
-            return True
-        elif index is not None and 0 <= index < len(self.sprite_list):
-            sprite = self.sprite_list[index]
-            self.space.remove(sprite.pymunk_shape, sprite.pymunk_shape.body)
-            sprite.remove_from_sprite_lists()
-            self.audio.play("grab_sword", volume=3.0)
-            return True
-        return False
+    def remove_sword(self):
+        """Remove the first sword from the game"""
+        if len(self.sprite_list) == 0:
+            print("No swords to remove")
+            return False
+        
+        # Get the first sword
+        sprite = self.sprite_list[0]
+        
+        # Remove from physics space (both shape and body)
+        self.space.remove(sprite.pymunk_shape.body, sprite.pymunk_shape)
+        
+        # Remove from sprite list
+        sprite.remove_from_sprite_lists()
+        
+        # Play sound
+        self.audio.play("grab_sword", volume=1.0)
+        print("Removed first sword")
+        return True
 
     def remove_all_swords(self):
         for sprite in self.sprite_list[:]:
