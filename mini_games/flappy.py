@@ -23,27 +23,16 @@ PIPE_VERTICAL_SPEED = 30
 
 FONT_SIZE = 36
 
-class VisualMode(Enum):
-    NORMAL = "normal"
-    FIRE   = "fire"
-    ICE    = "ice"
-
 PALETTES = {
-    VisualMode.NORMAL: (arcade.color.SKY_BLUE, arcade.color.WHITE),
-    VisualMode.FIRE:   (arcade.color.DARK_TANGERINE, arcade.color.DARK_RED),
-    VisualMode.ICE:    (arcade.color.SEA_BLUE, arcade.color.DARK_BLUE),
-}
-
-BIRD_COLORS = {
-    VisualMode.NORMAL: arcade.color.YELLOW_ORANGE,
-    VisualMode.FIRE:   arcade.color.BLACK,
-    VisualMode.ICE:    arcade.color.YELLOW_ORANGE,
+    DragonState.NORMAL: (arcade.color.SKY_BLUE, arcade.color.WHITE),
+    DragonState.FIRE:   (arcade.color.DARK_TANGERINE, arcade.color.DARK_RED),
+    DragonState.ICE:    (arcade.color.SEA_BLUE, arcade.color.DARK_BLUE),
 }
 
 class FlappyGame:
     """Mini-jeu Flappy Bird intégrable dans un panneau Arcade."""
 
-    def __init__(self, width: int, height: int, *, mode: VisualMode = VisualMode.NORMAL):
+    def __init__(self, width: int, height: int, *, mode: DragonState = DragonState.NORMAL):
         # dimensions du panel hôte
         self.panel_w = width
         self.panel_h = height
@@ -56,13 +45,13 @@ class FlappyGame:
         bg, pipe_col   = PALETTES[mode]
         self.background_color = bg
         self.pipe_color       = pipe_col
-        self.bird_color       = BIRD_COLORS[mode]
+        self.bird_color       = arcade.color.WHITE
         self.mode = mode
 
         # Gamemode pour correspondre à DragonState
-        if mode == VisualMode.FIRE:
+        if mode == DragonState.FIRE:
             self.gamemode = DragonState.FIRE
-        elif mode == VisualMode.ICE:
+        elif mode == DragonState.ICE:
             self.gamemode = DragonState.ICE
         else:
             self.gamemode = DragonState.NORMAL
@@ -78,11 +67,11 @@ class FlappyGame:
                 self.background = arcade.load_texture(str(RESOURCE_PATH / "bg_ice.png"))
 
         # vitesse ajustée
-        self.pipe_speed   = PIPE_SPEED * (2.5 if mode == VisualMode.FIRE else 1)
+        self.pipe_speed   = PIPE_SPEED * (2.5 if mode == DragonState.FIRE else 1)
         # ajustement physique à l'échelle du panel
         self.gravity       = GRAVITY * self.scale
         self.flap_strength = FLAP_STRENGTH * self.scale
-        self.moving_pipes = (mode == VisualMode.ICE)
+        self.moving_pipes = (mode == DragonState.ICE)
 
         self._reset()
         self.started = False
@@ -145,13 +134,26 @@ class FlappyGame:
             arcade.draw_lrbt_rectangle_filled(sx(x-PIPE_WIDTH/2), sx(x+PIPE_WIDTH/2),
                                               sy(REF_HEIGHT-top_h), sy(REF_HEIGHT), self.pipe_color)
         # score
-        arcade.draw_text(f"Score : {self.score}", offset_x+20, offset_y+self.panel_h-60,
-                         arcade.color.WHITE, FONT_SIZE*self.scale*0.6)
-        if self.game_over or self.victory:
-            msg = "Vous avez gagné" if self.victory else "Game Over"
-            arcade.draw_text(msg, offset_x+self.panel_w/2, offset_y+self.panel_h/2,
-                             arcade.color.BLACK, FONT_SIZE*self.scale,
-                             anchor_x="center", anchor_y="center")
+        # arcade.draw_text(f"Score : {self.score}", offset_x+20, offset_y+self.panel_h-60,
+        #                  arcade.color.WHITE, FONT_SIZE*self.scale*0.6)
+        # if self.game_over or self.victory:
+        #     msg = "Vous avez gagné" if self.victory else "Game Over"
+        #     arcade.draw_text(msg, offset_x+self.panel_w/2, offset_y+self.panel_h/2,
+        #                      arcade.color.BLACK, FONT_SIZE*self.scale,
+        #                      anchor_x="center", anchor_y="center")
+
+        if not self.started:
+            text = "Appuyer sur espace"
+            arcade.draw_text(
+                text,
+                self.panel_w / 2 + offset_x,  # X center
+                self.panel_h / 2 + offset_y,  # Y center
+                arcade.color.GRAY,
+                font_size=14,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True
+            )
 
   
     def on_key_press(self, key, _mods):

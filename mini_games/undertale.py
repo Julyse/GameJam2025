@@ -1,34 +1,31 @@
 import arcade
 import os
-from enum import Enum
-# from .enums.dragon_state import DragonState
-class DragonState(Enum):
-    ICE = 'ice'
-    FIRE = 'fire'
-    NORMAL = 'normal'
+from enums.dragon_state import DragonState
+from enums.minigames_status import GameStatus
 
-DEBUG_SHOW_HITBOX = True
+DEBUG_SHOW_HITBOX = False
 INVICIBILITY_TILE = 1.5 # IN SECONDS
 MOVEMENT_SPEED = 6
-HITBOX_HEIGHT = 20
-HITBOX_WIDTH = 20
+HITBOX_HEIGHT = 5
+HITBOX_WIDTH = 5
 
-# to be moved and used by everyone, same for dragon mode
-class GameStatus(Enum):
-    ONGOING = 1
-    WIN = 2
-    LOST = 3
+SPRITE_WIDTH = 15
+SPRITE_HEIGHT = 15
 
 class Player(arcade.Sprite):
     """ Player Class """
 
+    def __init__(self, width: int, height: int, color=(255, 255, 255, 255)):
+        texture = arcade.make_soft_square_texture(width, color, outer_alpha=255)
+        super().__init__(texture, scale=1.0)
+        self.width = width
+        self.height = height
+
     def update(self, screen_width, screen_height, delta_time: float = 1/60):
-        """ Move the player """
-        # Move player.
+        """ Move the player and clamp to screen. """
         self.center_x += self.change_x
         self.center_y += self.change_y
 
-        # Check for out-of-bounds
         if self.left < 0:
             self.left = 0
         elif self.right > screen_width - 1:
@@ -43,51 +40,40 @@ class Undertale:
     """
     Load MAP
     """
-
-    # to use
-    #to be static
     def get_resource_path(self, filename: str) -> str:
         """Return absolute path to a file inside ../resources/undertale."""
         base_path = os.path.dirname(os.path.abspath(__file__))
         return os.path.join(base_path, "..", "resources", "undertale", filename)
 
-    # map_1, map_2, ...
-    # should be static?
     def load_text_file(self, filename: str) -> str:
         """
         Load a text file from the project's 'resources' folder and return its contents as a string.
         """
-        # Build full path relative to project root
-        base_path = os.path.dirname(__file__)  # folder where this script lives
+        base_path = os.path.dirname(__file__) 
         file_path = os.path.join(base_path, "..", "resources", "undertale", filename)
 
-        # Make sure the file exists
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"Could not find resource file: {file_path}")
 
-        # Read file contents
         with open(file_path, "r", encoding="utf-8") as file:
             return file.read()
 
-    # should be static?
     def load_level_as_grid(self, text: str) -> list[list[int]]:
         grid = []
         for line in text.splitlines():
             grid.append([int(ch) for ch in line])
         
-        # Limiter la taille de la grille si nécessaire pour rester visible dans le panel
-        max_rows = 7  # Pour s'adapter à la hauteur du panel
+        max_rows = 7 
         return grid[:max_rows] if len(grid) > max_rows else grid
 
     def check_win_condition(self):
         """
         If all walls have scrolled past the left side of the screen, declare WIN.
         """
-        # Si tous les murs ont été supprimés (car sortis de l'écran) ou sont sortis à gauche
         if len(self.wall_list) == 0 or all(wall.right < 0 for wall in self.wall_list):
             self.game_status = GameStatus.WIN
             print("You won!")
-            arcade.close_window()
+            arcade.exit()
 
 
     """
@@ -96,17 +82,14 @@ class Undertale:
     def __init__(self, width, height, gamemode: DragonState):
         """
         Initializer
-        """
-        # Call the parent class initializer
-        #super().__init__(width, height, title)        
+        """      
         self.screen_width = width #720
         self.screen_height = height #325
         
-        # Tailles des tuiles adaptées à l'écran - plus petites pour garder les murs visibles
-        self.tile_width = self.screen_width / 15  # Plus de colonnes = murs plus étroits
-        self.tile_height = self.screen_height / 7  # Plus de lignes = murs moins hauts
+        self.tile_width = self.screen_width / 15
+        self.tile_height = self.screen_height / 7
 
-        self.sprite_scaling = 0.5 #to =_determine form width and height
+        self.sprite_scaling = 0.5
 
         self.game_status = GameStatus.ONGOING
 
@@ -115,37 +98,40 @@ class Undertale:
         self.up_pressed = False
         self.down_pressed = False
 
+        # NEW: whether the minigame has started (true after first movement key)
+        self.started = False
 
         self.gamemode = gamemode
-        # to-do switch gamemode for scrolling speed ....
+
+        # compute the base scroll speeds according to gamemode, but DO NOT start scrolling yet
         match gamemode:
             case DragonState.NORMAL:
-                self.scroll_speed_x = -1
-                self.scroll_speed_y = 0
+                self.base_scroll_speed_x = -1
+                self.base_scroll_speed_y = 0
             case DragonState.FIRE:
-                self.scroll_speed_x = -2
-                self.scroll_speed_y = 0
+                self.base_scroll_speed_x = -2
+                self.base_scroll_speed_y = 0
             case DragonState.ICE:
-                print("todo")
-                # @to-do
+                self.base_scroll_speed_x = -1
+                self.base_scroll_speed_y = -1
 
-        #should maybe be in player class
-        self.lifepoints = 3
+        # Current active scroll speed — we start frozen until player presses a key
+        self.scroll_speed_x = 0
+        self.scroll_speed_y = 0
+
+        self.lifepoints = 0 #to remove
         self.invincible = False;
 
         """ Set up the game and initialize the variables. """
-        # Sprite lists
         self.player_list = arcade.SpriteList()
-        # Set up the player
-        self.player_sprite = Player(":resources:images/animated_characters/female_person/"
-                                    "femalePerson_idle.png", self.sprite_scaling)
+        self.player_sprite = Player(SPRITE_WIDTH, SPRITE_HEIGHT, color=(255, 255, 255, 255))
         self.player_sprite.center_x = 50
         self.player_sprite.center_y = 50
 
         self.player_list.append(self.player_sprite)
 
-        BASE_PATH = os.path.dirname(os.path.abspath(__file__))  # folder where THIS script is located
-        RESOURCE_PATH = os.path.join(BASE_PATH, "..", "resources", "undertale")  # go up one folder
+        BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+        RESOURCE_PATH = os.path.join(BASE_PATH, "..", "resources", "undertale")
 
         print('GAMEMODE IS :', self.gamemode)
         match self.gamemode:
@@ -157,7 +143,7 @@ class Undertale:
                 self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg_ice.png"))
 
         self.player_hitbox = arcade.SpriteSolidColor(
-            width=HITBOX_WIDTH,  # smaller than your player sprite
+            width=HITBOX_WIDTH,
             height=HITBOX_HEIGHT,
             color=(255, 0, 0, 100)   
         )
@@ -169,9 +155,6 @@ class Undertale:
         level_data = self.load_text_file("map_normal_0")
         level_grid = self.load_level_as_grid(level_data)
 
-        # fire_sprite_template = arcade.load_animated_gif(self.get_resource_path("fire.gif"))
-        # fire_sprite_template.scale = FIRE_SCALING
-
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
         for row_index, row in enumerate(level_grid):
             for col_index, tile in enumerate(row):
@@ -181,19 +164,15 @@ class Undertale:
 
                     match self.gamemode:
                         case DragonState.NORMAL:
-                            # maybe we should define spritesolidcolr outsite
                             wall = arcade.SpriteSolidColor(
                                 width=self.tile_width,
                                 height=self.tile_height,
-                                # color=(255, 255, 255, 255)
                                 color=(255, 255, 255, 255)
                             )
                             wall.center_x = center_x
                             wall.center_y = center_y
                             self.wall_list.append(wall)
                         case DragonState.FIRE:
-                            #PATH CAN ALSO BE Pathlib.Path
-                            #maybe define outside
                             wall = arcade.load_animated_gif(self.get_resource_path("lava.gif"))
                             wall.width *= self.tile_width / 32 
                             wall.height *= self.tile_height / 32 
@@ -201,27 +180,30 @@ class Undertale:
                             wall.center_y = center_y
                             self.wall_list.append(wall)
                         case DragonState.ICE:
-                            print("todo")
+                            wall = arcade.SpriteSolidColor(
+                                width=self.tile_width,
+                                height=self.tile_height,
+                                color=arcade.color.SEA_BLUE
+                            )
+                            wall.center_x = center_x
+                            wall.center_y = center_y
+                            self.wall_list.append(wall)
                     
 
     def draw(self, offset_x: float = 0, offset_y: float = 0):
         """
         Render the screen.
         """
-        # This command has to happen before we start drawing
-        # self.clear()
 
         arcade.draw_texture_rect(
             self.background,
             arcade.LBWH(offset_x, offset_y, self.screen_width, self.screen_height),
         )
 
-        # Sauvegarder positions originales
         wall_positions = [(wall.center_x, wall.center_y) for wall in self.wall_list]
         player_positions = [(player.center_x, player.center_y) for player in self.player_list]
         hitbox_positions = [(hitbox.center_x, hitbox.center_y) for hitbox in self.hitbox_list]
         
-        # Ajouter offset à tous les sprites
         for wall in self.wall_list:
             wall.center_x += offset_x
             wall.center_y += offset_y
@@ -233,18 +215,15 @@ class Undertale:
         for hitbox in self.hitbox_list:
             hitbox.center_x += offset_x
             hitbox.center_y += offset_y
-        
-        # Dessiner tous les murs, la suppression des murs hors écran dans update() devrait suffire
+
         self.wall_list.draw()
             
-        # Dessiner le joueur et le hitbox
         if not self.invincible or self.blink_state:
             self.player_list.draw()
         
         if DEBUG_SHOW_HITBOX:
             self.hitbox_list.draw()
         
-        # Restaurer positions originales
         for i, wall in enumerate(self.wall_list):
             wall.center_x, wall.center_y = wall_positions[i]
         
@@ -254,8 +233,20 @@ class Undertale:
         for i, hitbox in enumerate(self.hitbox_list):
             hitbox.center_x, hitbox.center_y = hitbox_positions[i]
 
+        if not self.started:
+            text = "Appuyer sur Z/Q/S/D ou les flèches directionnels"
+            arcade.draw_text(
+                text,
+                self.screen_width / 2 + offset_x,  # X center
+                self.screen_height / 2 + offset_y,  # Y center
+                arcade.color.GRAY,
+                font_size=14,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True
+            )
+
     def update_player_speed(self):
-        # Calculate speed based on the keys pressed
         self.player_sprite.change_x = 0
         self.player_sprite.change_y = 0
 
@@ -271,64 +262,56 @@ class Undertale:
     def take_damage(self):
         """Called whenever the player takes a hit."""
 
-        #
-        # DO A CHECK EVERY GAME LOOP IF GAME OVER
-        # 
-
         if (self.lifepoints - 1 < 0):
             self.game_status = GameStatus.LOST
-            arcade.close_window()
-            # return ?
+            arcade.exit()
 
         self.lifepoints -= 1
         print(f"Player hit! Lifepoints: {self.lifepoints}")
 
-        # Trigger invincibility period
         self.invincible = True
         self.invincibility_timer = INVICIBILITY_TILE
-        self.blink_timer = 0.1          # start blink timer
+        self.blink_timer = 0.1
         self.blink_state = False
 
 
     def manage_collision(self, delta_time):
-        # If not invincible, check for collisions
         if not self.invincible:
             collision = arcade.check_for_collision_with_list(self.player_hitbox, self.wall_list)
             if collision:
                 self.take_damage()
 
-        # If invincible, count down
         if self.invincible:
             self.invincibility_timer -= delta_time
             self.blink_timer -= delta_time
 
-            # Toggle blinking every 0.1s
             if self.blink_timer <= 0:
                 self.blink_timer = 0.1
                 self.blink_state = not self.blink_state
 
             if self.invincibility_timer <= 0:
                 self.invincible = False
-                self.player_sprite.alpha = 255  # fully visible again
+                self.player_sprite.alpha = 255
 
     def update(self, delta_time):
         """ Movement and game logic """
+        # If the player hasn't pressed a movement key yet, do not run the gameplay loop.
+        # Still allow drawing to show the static screen; no walls move, no collisions processed.
+        if not self.started:
+            # still update player sprite position if you want to allow immediate camera/player response:
+            # self.player_list.update(self.screen_width, self.screen_height, delta_time)
+            # but typically before start we want player frozen, so just return.
+            return
 
-        # Move the player
+        # --- rest of your existing update logic unchanged ---
         self.player_list.update(self.screen_width, self.screen_height, delta_time)
         self.player_hitbox.center_x = self.player_sprite.center_x
         self.player_hitbox.center_y = self.player_sprite.center_y
         
         self.manage_collision(delta_time)
-        # collision = arcade.check_for_collision_with_list(self.player_hitbox, self.wall_list)
-        # print(self.lifepoints)
-        # print(collision)
-
-        #only if fire
         if self.gamemode == DragonState.FIRE:
             self.wall_list.update_animation(delta_time)
 
-        # Déplacer les murs et supprimer ceux qui sortent du panel à gauche
         walls_to_remove = []
         for wall in self.wall_list:
             wall.center_x += self.scroll_speed_x
@@ -358,6 +341,13 @@ class Undertale:
                 self.right_pressed = True
             case _:
                 return
+
+        if not self.started:
+            self.started = True
+            self.scroll_speed_x = self.base_scroll_speed_x
+            self.scroll_speed_y = self.base_scroll_speed_y
+            print("Game started (player pressed a movement key).")
+
         self.update_player_speed()
 
 
