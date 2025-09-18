@@ -53,8 +53,8 @@ class CombatEncounter:
         
     def reset(self):
         """Reset encounter state"""
-        self.dragon_hp = 40
-        self.hero_hp = 40
+        self.dragon_hp = 20
+        self.hero_hp = 20
         # Max HP used for UI scaling
         self.max_dragon_hp = self.dragon_hp
         self.max_hero_hp = self.hero_hp
@@ -315,6 +315,8 @@ class CombatEncounter:
             
         center_x = panel.left + panel.width // 2
         center_y = panel.bottom + panel.height // 2
+
+        color_victory = color.RED
         
         if self.result == "defeat":
             draw_text("GAME OVER", center_x, center_y,
@@ -333,16 +335,17 @@ class CombatEncounter:
                      font_name=("Righteous", "arial", "calibri"))
 
         elif self.result == "victory":
-            draw_text("VICTORY", center_x, center_y,
+            draw_text("VICTOIRE", center_x, center_y,
                      color.GREEN, 48, anchor_x="center", anchor_y="center", 
                      font_name=("Righteous", "arial", "calibri"))
             draw_text("Le dragon est vaincu !", center_x, center_y - 60,
                      color.GREEN, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
+            color_victory = color.GREEN
 
-        if "defeat" in str(self.result): # ADD DEFEAT SWORD!!
-            draw_text("PRESS ESCAPE TO RESTART", center_x, center_y - 120,
-                     color.RED, 20, anchor_x="center", anchor_y="center", font_name=("Righteous", "arial", "calibri"))
+        if "defeat" or "defeat_sword" in str(self.result): # ADD DEFEAT SWORD!!
+            draw_text("Appuyez sur échap pour redémarrer", center_x, center_y - 120,
+                     color_victory, 20, anchor_x="center", anchor_y="center", font_name=("Righteous", "arial", "calibri"))
 class Character(Sprite):
     def update(self, delta_time: float = 1 / 60, p_x=0, p_y=0, *args, **kwargs) -> None:
         self.center_x -= p_x
