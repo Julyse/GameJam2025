@@ -6,7 +6,7 @@ from enums.minigames_status import GameStatus
 from mini_games.undertale import Undertale
 
 class SmallPanel2(BasePanel):
-    def __init__(self, x: int, y: int, width: int, height: int, *, big_panel_ref=None, sword_panel_ref=None):
+    def __init__(self, x: int, y: int, width: int, height: int, *, big_panel_ref=None, sword_panel_ref=None, mode=DragonState.NORMAL):
         super().__init__(x=x, y=y, width=width, height=height,
                          color=arcade.color.SKY_BLUE, label="Flappy")
         self.game = None
