@@ -483,6 +483,17 @@ class BigPanel(BasePanel):
         # Reference to SwordStacking (SmallPanel3); set by controller
         
         self.sword_panel_ref = None
+        # Control whether dragon state cycles based on a timer during minigames
+        # Set to False so state changes only when minigames end
+        self.use_time_based_mode = False
+
+    def advance_combat_mode(self):
+        """Advance dragon state to the next mode immediately."""
+        try:
+            self.set_combat_mode(next(self.state_cycle))
+            print("Next state ", self.combat_mode)
+        except Exception:
+            pass
     def _setup_mode_visuals(self):
         """Configure visual elements based on combat mode."""
         match self.combat_mode:
@@ -665,11 +676,12 @@ class BigPanel(BasePanel):
         self.encounter.update_encounter(delta_time)
         self.encounter.update_final_message(delta_time)
         
-        self.state_timer += delta_time 
-        if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
-            self.state_timer = 0 
-            self.set_combat_mode(next(self.state_cycle))
-            print("Next state ", self.combat_mode)
+        if self.use_time_based_mode:
+            self.state_timer += delta_time 
+            if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
+                self.state_timer = 0 
+                self.set_combat_mode(next(self.state_cycle))
+                print("Next state ", self.combat_mode)
 
             
 
