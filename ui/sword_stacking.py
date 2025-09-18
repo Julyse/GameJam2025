@@ -8,7 +8,7 @@ import audio_controller
 from PIL import Image
 import io
 
-UPSCALE = 3.5  
+UPSCALE = 4.5
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")

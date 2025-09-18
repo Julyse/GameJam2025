@@ -1,7 +1,6 @@
 import arcade
 from pathlib import Path
 from typing import Dict
-from audio_controller import SoundController
 class SoundController:
     def __init__(self):
         # Dictionary to store loaded sounds
