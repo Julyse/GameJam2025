@@ -63,7 +63,7 @@ def build_default_panels() -> list[BasePanel]:
     x_cursor = 0
     panels.append(SmallPanel1(x=x_cursor, y=0, width=w1, height=BOTTOM_HEIGHT))
     x_cursor += w1
-    sp2 = SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT, big_panel_ref=big_panel, mode=DragonState.NORMAL)
+    sp2 = SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT, big_panel_ref=big_panel)
     panels.append(sp2)
     x_cursor += w2
     sword_panel = SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT)

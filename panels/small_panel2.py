@@ -6,7 +6,7 @@ from enums.minigames_status import GameStatus
 from mini_games.undertale import Undertale
 
 class SmallPanel2(BasePanel):
-    def __init__(self, x: int, y: int, width: int, height: int, *, big_panel_ref=None, sword_panel_ref=None, mode: DragonState = DragonState.FIRE):
+    def __init__(self, x: int, y: int, width: int, height: int, *, big_panel_ref=None, sword_panel_ref=None):
         super().__init__(x=x, y=y, width=width, height=height,
                          color=arcade.color.SKY_BLUE, label="Flappy")
         self.game = None
@@ -14,16 +14,17 @@ class SmallPanel2(BasePanel):
         self._next_is_undertale = True
         self.big_panel_ref = big_panel_ref
         self.sword_panel_ref = sword_panel_ref
-        self.mode = mode
         self.start_next_minigame()
 
     def start_undertale(self):
         self.last_result = None
-        self.game = Undertale(self.width, self.height, self.mode, on_finish=self.on_game_finish)
+        mode= self.big_panel_ref.combat_mode 
+        self.game = Undertale(self.width, self.height, mode, on_finish=self.on_game_finish)
 
     def start_flappy(self):
         self.last_result = None
-        self.game = FlappyGame(self.width, self.height, mode=self.mode, on_finish=self.on_game_finish)
+        mode= self.big_panel_ref.combat_mode 
+        self.game = FlappyGame(self.width, self.height, mode, on_finish=self.on_game_finish)
 
     def start_next_minigame(self):
         if self._next_is_undertale:
