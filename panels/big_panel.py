@@ -269,21 +269,9 @@ class CombatEncounter:
                 
     def draw_hud(self, panel):
         """Draw HP bars and combat info"""
-        # Sword inventory (show count from SwordStacking if available)
         hp_y = panel.bottom + panel.height - 40
-        sword_count = None
-        try:
-            if hasattr(panel, "sword_panel_ref") and panel.sword_panel_ref and hasattr(panel.sword_panel_ref, "game"):
-                stack = panel.sword_panel_ref.game
-                sword_count = stack.get_sword_count() if hasattr(stack, "get_sword_count") else len(getattr(stack, "sprite_list", []))
-        except Exception:
-            sword_count = None
-        if sword_count is None:
-            sword_count = len(self.sword_inventory)
-        sword_text = f"Swords: {sword_count}"
-        draw_text(sword_text, panel.left + 400, hp_y,
-                 color.YELLOW, 16, font_name=("Righteous", "arial", "calibri"))
-        
+        # Texte des épées masqué à la demande
+
         # Combat status
         if self.running and not self.finished:
             status_text = "Combat in progress"
