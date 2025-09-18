@@ -50,7 +50,13 @@ class GameController(arcade.View):
         panels, sword_panel = GameController.build_default_panels()
         controller = GameController(panels)
         controller.sword_panel = sword_panel 
-        window.show_view(controller)        
+        window.show_view(controller)
+        # Ensure one sword is visible at the start to match initial inventory
+        try:
+            sword_panel.add_sword()
+        except Exception:
+            pass
+        
         return controller
 
     @staticmethod
