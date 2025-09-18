@@ -22,7 +22,12 @@ from numpy import linspace
 from pathlib import Path
 from effects import create_explosion_system
 from enums.dragon_state import DragonState
+import os 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
+
+sounds = ["foom.wav", ""]
 
 class SpriteState(Enum):
     STANDBY = 1
@@ -32,6 +37,8 @@ class SpriteState(Enum):
     FLEEING = 5
 
 SWORD_DURABILITY = 3
+
+
 
 class ActionType(Enum):
     DRAGON_ATTACK = "dragon_attack"

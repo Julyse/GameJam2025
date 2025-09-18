@@ -39,13 +39,6 @@ class GameController(arcade.View):
             if hasattr(p, "on_key_press"):
                 p.on_key_press(key, modifiers)
 
-        # if key == arcade.key.C: 
-        #     #print("Craft une épée")
-        #     self.sword_panel.game.add_sword()
-
-        # if key == arcade.key.U: 
-        #     #print("Utilise une épée")
-        #     self.sword_panel.game.remove_sword()
 
     @staticmethod
     def start_game(window: arcade.Window):

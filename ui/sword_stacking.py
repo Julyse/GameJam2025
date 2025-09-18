@@ -15,10 +15,10 @@ SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
 
 if platform == "darwin":
-    sounds = ["grab_sword.wav", "craft_sword_fixed.wav"]
+    sounds = ["broke_sword.wav", "craft_sword_fixed.wav"]
 
 else:
-    sounds = ["grab_sword.wav", "craft_sword.wav"]
+    sounds = ["broke_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -52,7 +52,7 @@ class SwordStacking:
         self.audio = audio_controller.SoundController()
         self.load_sounds()
 
-        # Sword images
+        # load sword images
         self.sword_files = [
             os.path.join(SWORD_FOLDER, f)
             for f in os.listdir(SWORD_FOLDER)
@@ -69,7 +69,6 @@ class SwordStacking:
             #print(f"Background image not found at {background_path}")
             None
 
-        # Create boundaries
         self._create_boundaries()
 
     def load_sounds(self):
@@ -81,12 +80,11 @@ class SwordStacking:
     def add_sword(self):
         mass = 1.0
         width, height = 32 * UPSCALE, 8 * UPSCALE
-
-        # Random position
+       
         x = random.randint(40, self.width - 40)
         y = random.randint(self.height // 2, self.height - 20)
 
-        # Random angle
+        # Random drop angle
         angle = random.uniform(0, 2 * math.pi)
 
         # Physics body
@@ -145,7 +143,7 @@ class SwordStacking:
 
         # Play sound
         try:
-            self.audio.play("grab_sword", volume=1.0)
+            self.audio.play("broke_sword", volume=1.0)
         except Exception:
             pass
         #print("Removed sword")
