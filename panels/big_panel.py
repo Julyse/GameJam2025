@@ -457,6 +457,7 @@ class BigPanel(BasePanel):
         self.explosions, self.spawn_explosion, self.update_explosions, self.draw_explosions = create_explosion_system(
             Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
             frame_step=2,
+            default_scale=2.0,
         )
         # Nombre d'étapes pour le déplacement des projectiles (plus grand = plus lent)
         self.fireball_steps = 24
@@ -585,15 +586,7 @@ class BigPanel(BasePanel):
         self._attack_is_projectile = projectile
 
     def _end_attack_anim(self) -> None:
-        # Pour les projectiles, on capture la dernière position avant tout reset
-        last_fx = None
-        last_fy = None
-        if self._attack_is_projectile and self.attack_actor is not None:
-            last_fx = self.attack_actor.center_x
-            last_fy = self.attack_actor.center_y
-        if self._attack_is_projectile and last_fx is not None and last_fy is not None:
-            # Explosion au point d'impact (dernière position atteinte)
-            self.spawn_explosion(last_fx, last_fy)
+        # L'explosion est gérée dans _on_projectile_hit
         if self.attack_actor and self.attack_actor_start:
             self.attack_actor.center_x, self.attack_actor.center_y = (
                 self.attack_actor_start
