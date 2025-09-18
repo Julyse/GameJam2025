@@ -334,7 +334,7 @@ class CombatEncounter:
                      font_name=("Righteous", "arial", "calibri"))
 
         if "defeat" in str(self.result): # ADD DEFEAT SWORD!!
-            draw_text("PRESS SPACE TO RESTART", center_x, center_y - 120,
+            draw_text("PRESS ESCAPE TO RESTART", center_x, center_y - 120,
                      color.RED, 20, anchor_x="center", anchor_y="center", font_name=("Righteous", "arial", "calibri"))
 class Character(Sprite):
     def update(self, delta_time: float = 1 / 60, p_x=0, p_y=0, *args, **kwargs) -> None:
