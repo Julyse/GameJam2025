@@ -1,3 +1,6 @@
+from ast import arg
+from os import execl, execv
+from sys import argv, executable
 from .base_panel import BasePanel
 from arcade import (
     Sprite,
@@ -8,6 +11,7 @@ from arcade import (
     load_texture,
     draw_texture_rect,
     load_animated_gif,
+    key
 )
 from math import cos, pi, sin
 from random import random, gauss, uniform, choice, shuffle
@@ -173,7 +177,7 @@ class CombatEncounter:
             stop_before=40.0, 
             projectile=False
         )
-        
+    
     def _on_action_complete(self):
         """Called when an attack animation finishes"""
         self.action_in_progress = False
@@ -324,6 +328,9 @@ class CombatEncounter:
                      color.GREEN, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
 
+        if "defeat" in str(self.result):
+            draw_text("PRESS SPACE TO RESTART", center_x, center_y - 120,
+                     color.RED, 20, anchor_x="center", anchor_y="center", font_name=("Righteous", "arial", "calibri"))
 class Character(Sprite):
     def update(self, delta_time: float = 1 / 60, p_x=0, p_y=0, *args, **kwargs) -> None:
         self.center_x -= p_x
@@ -479,6 +486,10 @@ class BigPanel(BasePanel):
             case DragonState.ICE:
                 self.breath_color = color.SKY_BLUE
                 self.bg_tint = (0, 100, 200, 40)  # Ice tint (blue)
+
+    def on_key_press(self, symbol: int, modifiers: int):
+        if symbol == key.SPACE and "defeat" in str(self.encounter.result):
+            execl(executable, executable, * argv)
 
     def set_combat_mode(self, mode: DragonState):
         """Change combat mode without resetting fight state (HP, timers, etc.)"""
