@@ -67,7 +67,7 @@ class SmallPanel2(BasePanel):
         super().on_draw()
         if self.game is not None:
             self.game.draw(offset_x=self.left, offset_y=self.bottom)
-    
+
     def on_key_press(self, key, modifiers):
         if not self.enabled:
             return
