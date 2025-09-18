@@ -10,7 +10,7 @@ from arcade import (
     load_animated_gif,
 )
 from math import cos, pi, sin
-from random import random, gauss, uniform, choice
+from random import random, gauss, uniform, choice, shuffle
 from enum import Enum
 from numpy import linspace
 from pathlib import Path
@@ -25,6 +25,304 @@ class SpriteState(Enum):
     DEAD = 4
     FLEEING = 5
 
+
+class ActionType(Enum):
+    DRAGON_ATTACK = "dragon_attack"
+    HERO_ATTACK = "hero_attack"
+
+class CombatEncounter:
+    """Sequenced combat system with randomized action queue"""
+    
+    def __init__(self, parent_panel):
+        self.panel = parent_panel
+        self.reset()
+        
+    def reset(self):
+        """Reset encounter state"""
+        self.dragon_hp = 60  # Dragon needs 20 hits to die
+        self.hero_hp = 50    # Hero dies after 10 dragon hits
+        self.running = False
+        self.finished = False
+        self.result = None  # "victory", "defeat", or None
+        
+        # Sword inventory system
+        self.sword_inventory = [10]  # Start with 1 sword, durability 3
+        
+        # Random scheduler (no fixed queue)
+        self.action_timer = 0.0
+        self.action_interval = 0.8  # Base interval between actions
+        self.current_action = None
+        self.action_in_progress = False
+        self.final_message_timer = 0.0
+        self.final_message_delay = 1.0
+        
+        # Scheduler probabilities
+        self.p_dragon = 0.55
+        self.p_hero = 0.45
+        
+    def start_encounter(self):
+        """Initialize and start the combat sequence"""
+        self.reset()
+        self.running = True
+        print(f"🎯 Combat started! Dragon HP: {self.dragon_hp}, Hero HP: {self.hero_hp}, Swords: {len(self.sword_inventory)}")
+        
+    def add_sword(self, count=1):
+        """Add sword(s) to inventory - called by mini-games on success"""
+        for _ in range(count):
+            self.sword_inventory.append(5)  # Each sword has 3 durability
+        print(f"⚔️ Added {count} sword(s)! Total swords: {len(self.sword_inventory)}")
+        
+    def _has_usable_sword(self):
+        """Check if hero has any sword with durability > 0"""
+        return len(self.sword_inventory) > 0 and any(durability > 0 for durability in self.sword_inventory)
+        
+    def _use_sword(self):
+        """Use 1 durability from first available sword, remove if depleted"""
+        if not self.sword_inventory:
+            return False
+            
+        # Find first sword with durability > 0
+        for i, durability in enumerate(self.sword_inventory):
+            if durability > 0:
+                self.sword_inventory[i] -= 1
+                if self.sword_inventory[i] <= 0:
+                    # Remove depleted sword
+                    self.sword_inventory.pop(i)
+                    print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
+                return True
+        return False
+        
+    def update_encounter(self, dt):
+        """Update combat logic - called from BigPanel.on_update"""
+        if not self.running or self.finished:
+            return
+            
+        # Wait for current action to complete
+        if self.action_in_progress:
+            if not self.panel.attacking:  # Attack animation finished
+                self._on_action_complete()
+            return
+            
+        # Timer for next action
+        self.action_timer += dt
+        if self.action_timer >= self.action_interval:
+            self._schedule_next_action()
+            
+    def _schedule_next_action(self):
+        """Randomly choose next actor and execute action"""
+        # Choose next actor randomly
+        next_actor = self._choose_next_actor()
+        
+        self.current_action = ActionType.DRAGON_ATTACK if next_actor == "dragon" else ActionType.HERO_ATTACK
+        self.action_in_progress = True
+        self.action_timer = 0.0
+        
+        # Add jitter to next interval
+        self.action_interval = uniform(0.65, 0.95)
+        
+        print(f"🎲 Next action: {self.current_action.value}")
+        
+        if self.current_action == ActionType.DRAGON_ATTACK:
+            self._begin_dragon_attack()
+        elif self.current_action == ActionType.HERO_ATTACK:
+            self._begin_hero_attack()
+            
+    def _choose_next_actor(self):
+        """Returns 'dragon' or 'hero' using randomized logic"""
+        # If hero has no swords, force dragon attack
+        if not self._has_usable_sword():
+            return "dragon"
+            
+        # Otherwise use probability weights
+        return "dragon" if random() < self.p_dragon else "hero"
+            
+    def _begin_dragon_attack(self):
+        """Start dragon fireball attack"""
+        # Set dragon to attacking state
+        self.panel.d_state = SpriteState.ATTACKING
+        
+        # Position and fire projectile
+        self.panel.fireball.center_x = self.panel.drake.center_x
+        self.panel.fireball.center_y = self.panel.drake.center_y
+        self.panel.fireball.color = self.panel.breath_color
+        
+        # Start projectile animation
+        self.panel._start_attack_anim(
+            self.panel.fireball, 
+            self.panel.knight, 
+            projectile=True
+        )
+        
+    def _begin_hero_attack(self):
+        """Start hero sword attack"""
+        # Check if hero has usable sword
+        if not self._has_usable_sword():
+            print("💥 Hero attack failed - no sword available!")
+            # Play failed attack animation or effect
+            self.action_in_progress = False  # Skip this action
+            return
+            
+        # Set hero to attacking state and apply animation
+        self.panel.k_state = SpriteState.ATTACKING
+        self.panel._apply_knight_gif()
+        
+        # Start sword attack animation
+        self.panel._start_attack_anim(
+            self.panel.knight, 
+            self.panel.drake, 
+            stop_before=40.0, 
+            projectile=False
+        )
+        
+    def _on_action_complete(self):
+        """Called when an attack animation finishes"""
+        self.action_in_progress = False
+        
+        if self.current_action == ActionType.DRAGON_ATTACK:
+            self._on_projectile_hit()
+        elif self.current_action == ActionType.HERO_ATTACK:
+            self._on_hero_strike_hit()
+            
+        # Return to standby if still alive
+        if self.hero_hp > 0 and not self.finished:
+            self.panel.k_state = SpriteState.STANDBY
+            self.panel._apply_knight_gif()
+        if self.dragon_hp > 0 and not self.finished:
+            self.panel.d_state = SpriteState.STANDBY
+            
+    def _on_projectile_hit(self):
+        """Handle dragon projectile hitting hero"""
+        # Spawn explosion at hero position
+        self.panel.spawn_explosion(
+            self.panel.knight.center_x + uniform(-15, 15),
+            self.panel.knight.center_y + uniform(-15, 15)
+        )
+        
+        # Damage hero
+        self.hero_hp -= 1
+        print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/10")
+        
+        # Check for hero death
+        if self.hero_hp <= 0:
+            self._on_hero_death()
+            
+    def _on_hero_strike_hit(self):
+        """Handle hero sword hitting dragon"""
+        # Use sword durability
+        if not self._use_sword():
+            print("💥 Hero attack failed - no sword durability!")
+            return
+            
+        # Damage dragon
+        self.dragon_hp -= 1
+        print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/20, Swords: {len(self.sword_inventory)}")
+        
+        # Check for dragon death
+        if self.dragon_hp <= 0:
+            self._on_dragon_death()
+        # Check if hero has no more swords and dragon still alive
+        elif not self._has_usable_sword() and self.dragon_hp > 0:
+            print("💔 Hero has no more swords - defeat!")
+            self.panel.k_state = SpriteState.DEAD
+            self.panel._apply_knight_gif()
+            
+            self._end_encounter("defeat_sword")
+
+    def _on_hero_death(self):
+        """Handle hero death"""
+        print("💀 Hero has fallen!")
+        
+        # Set hero to dead state and keep on ground
+        self.panel.k_state = SpriteState.DEAD
+        self.panel._apply_knight_gif()
+        
+        self._end_encounter("defeat")
+        
+    def _on_dragon_death(self):
+        """Handle dragon death"""
+        print("🏆 Dragon defeated!")
+        
+        # Set dragon to defeated state
+        self.panel.d_state = SpriteState.DEAD
+        
+        self._end_encounter("victory")
+        
+    def _end_encounter(self, result):
+        """End the encounter with given result"""
+        self.result = result
+        self.running = False
+        self.action_in_progress = False
+        
+        # Clear any remaining attacks
+        if self.panel.attacking:
+            self.panel._end_attack_anim()
+            
+        # Start final message timer
+        self.final_message_timer = 0.0
+        
+    def update_final_message(self, dt):
+        """Update final message timer"""
+        if self.result and not self.finished:
+            self.final_message_timer += dt
+            if self.final_message_timer >= self.final_message_delay:
+                self.finished = True
+                
+    def draw_hud(self, panel):
+        """Draw HP bars and combat info"""
+        # Sword inventory (show count from SwordStacking if available)
+        hp_y = panel.bottom + panel.height - 40
+        sword_count = None
+        try:
+            if hasattr(panel, "sword_panel_ref") and panel.sword_panel_ref and hasattr(panel.sword_panel_ref, "game"):
+                stack = panel.sword_panel_ref.game
+                sword_count = stack.get_sword_count() if hasattr(stack, "get_sword_count") else len(getattr(stack, "sprite_list", []))
+        except Exception:
+            sword_count = None
+        if sword_count is None:
+            sword_count = len(self.sword_inventory)
+        sword_text = f"Swords: {sword_count}"
+        draw_text(sword_text, panel.left + 400, hp_y,
+                 color.YELLOW, 16, font_name=("Righteous", "arial", "calibri"))
+        
+        # Combat status
+        if self.running and not self.finished:
+            status_text = "Combat in progress"
+            if self.current_action:
+                status_text += f" - {self.current_action.value}"
+            draw_text(status_text, panel.left + 20, hp_y - 25,
+                     color.GRAY, 14, font_name=("Righteous", "arial", "calibri"))
+                     
+    def draw_final_messages(self, panel):
+        """Draw victory/defeat messages"""
+        if not self.finished:
+            return
+            
+        center_x = panel.left + panel.width // 2
+        center_y = panel.bottom + panel.height // 2
+        
+        if self.result == "defeat":
+            draw_text("GAME OVER", center_x, center_y,
+                     color.RED, 48, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+            draw_text("La bataille est perdue...", center_x, center_y - 60,
+                     color.RED, 18, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+
+        elif self.result == "defeat_sword":
+            draw_text("GAME OVER", center_x, center_y,
+                     color.RED, 48, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+            draw_text("Vous n'avez pas fabrique assez d'epee", center_x, center_y - 60,
+                     color.RED, 18, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
+
+        elif self.result == "victory":
+            draw_text("VICTORY", center_x, center_y,
+                     color.GREEN, 48, anchor_x="center", anchor_y="center", 
+                     font_name=("Righteous", "arial", "calibri"))
+            draw_text("Le dragon est vaincu !", center_x, center_y - 60,
+                     color.GREEN, 18, anchor_x="center", anchor_y="center",
+                     font_name=("Righteous", "arial", "calibri"))
 
 class Character(Sprite):
     def update(self, delta_time: float = 1 / 60, p_x=0, p_y=0, *args, **kwargs) -> None:
@@ -52,12 +350,12 @@ class BigPanel(BasePanel):
         self.fireball.append_texture(load_texture(Path(__file__).parent.parent / "resources" / "fire2_1.gif"))
 
         center_x = self.width / 2 + x
-        center_y = self.height / 2 + y
+        base_y = self.bottom + 200  # position verticale fixe, bas du panel
 
-        padding = uniform(200, 350)
+        padding = 295.0  # écart horizontal fixe
 
-        self.knight.position = (center_x - padding, center_y)
-        self.drake.position = (center_x + padding, center_y)
+        self.knight.position = (center_x - padding, base_y)
+        self.drake.position = (center_x + padding, base_y - 55)
 
         self.fireball.position = (self.drake.center_x, self.drake.center_y)
         self.fireball.multiply_scale(1.25)
@@ -67,7 +365,7 @@ class BigPanel(BasePanel):
         self.knight_ipos = (self.knight.center_x, self.knight.center_y)
         self.drake_ipos = (self.drake.center_x, self.drake.center_y)
 
-        self.sword.position = (center_x - padding + 100, center_y + 20)
+        self.sword.position = (center_x - padding + 100, base_y + 20)
 
         self.drake.texture = self.drake.texture.flip_horizontally()
 
@@ -160,6 +458,15 @@ class BigPanel(BasePanel):
             Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
             frame_step=2,
         )
+        # Nombre d'étapes pour le déplacement des projectiles (plus grand = plus lent)
+        self.fireball_steps = 24
+        
+        # Combat encounter system
+        self.encounter = CombatEncounter(self)
+        # Auto-start combat after a brief delay
+        self.encounter_start_timer = 2.0  # Start combat after 2 seconds
+        # Reference to SwordStacking (SmallPanel3); set by controller
+        self.sword_panel_ref = None
     def _setup_mode_visuals(self):
         """Configure visual elements based on combat mode."""
         match self.combat_mode:
@@ -168,10 +475,10 @@ class BigPanel(BasePanel):
                 self.bg_tint = None
             case DragonState.FIRE:
                 self.breath_color = color.DARK_RED
-                self.bg_tint = (color.DARK_TANGERINE[0], color.DARK_TANGERINE[1], color.DARK_TANGERINE[2], 40)  # Fire tint
+                self.bg_tint = (255, 140, 0, 40)  # Fire tint (orange)
             case DragonState.ICE:
                 self.breath_color = color.SKY_BLUE
-                self.bg_tint = (color.DARK_BLUE[0], color.DARK_BLUE[1], color.DARK_BLUE[2], 40)  # Ice tint
+                self.bg_tint = (0, 100, 200, 40)  # Ice tint (blue)
 
     def set_combat_mode(self, mode: DragonState):
         """Change combat mode without resetting fight state (HP, timers, etc.)"""
@@ -191,8 +498,9 @@ class BigPanel(BasePanel):
             from arcade import draw_lrbt_rectangle_filled
             draw_lrbt_rectangle_filled(self.left, self.right, self.bottom, self.top, self.bg_tint)
         
-        k_index = int((self.k_lives / self.max_k_lives) * (len(self.k_healthbar.textures) - 1))
-        d_index = int((self.d_lives / self.max_d_lives) * (len(self.d_healthbar.textures) - 1))
+        # Mise à jour des barres de vie basée sur le système de combat
+        k_index = int((self.encounter.hero_hp / 10) * (len(self.k_healthbar.textures) - 1))
+        d_index = int((self.encounter.dragon_hp / 20) * (len(self.d_healthbar.textures) - 1))
         k_index = max(0, min(k_index, len(self.k_healthbar.textures) - 1))
         d_index = max(0, min(d_index, len(self.d_healthbar.textures) - 1))
         self.k_healthbar.set_texture(k_index)
@@ -205,17 +513,9 @@ class BigPanel(BasePanel):
         # Dessiner les explosions
         self.draw_explosions()
 
-        msg_x = self.left + self.width / 2 - 80
-        msg_y = self.bottom + self.height - 40
-
-        if self.s_lives <= 0:
-            draw_text("The sword is broken!", msg_x, msg_y, color.RED, 16)
-            msg_y -= 25
-        if self.k_lives <= 0 or self.k_state == SpriteState.DEAD:
-            draw_text("The knight is dead!", msg_x, msg_y, color.RED, 16)
-            msg_y -= 25
-        if self.d_lives <= 0 or self.d_state == SpriteState.DEAD:
-            draw_text("The drake is dead!", msg_x, msg_y, color.RED, 16)
+        # Draw combat encounter HUD and messages
+        self.encounter.draw_hud(self)
+        self.encounter.draw_final_messages(self)
 
     def set_ball_type(type: any): # type: ignore
         pass
@@ -266,7 +566,7 @@ class BigPanel(BasePanel):
         else:
             tip_x = dx - vx / dist * stop_before
             tip_y = dy - vy / dist * stop_before
-        steps = 12
+        steps = self.fireball_steps if projectile else 12
         fxs = linspace(ax, tip_x, steps)
         fys = linspace(ay, tip_y, steps)
         if projectile:
@@ -329,17 +629,16 @@ class BigPanel(BasePanel):
 
         # Mettre à jour les explosions
         self.update_explosions(delta_time)
-
-        if self.s_lives <= 0 or self.k_lives <= 0 or self.d_lives <= 0:
-            if self.attacking and self._attack_is_projectile:
-                self._end_attack_anim()
-            if self.k_lives <= 0:
-                self.k_state = SpriteState.DEAD
-                self._apply_knight_gif()
-            self._sync_knight_gif_pos()
-            if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
-                self.k_gifs[self.k_state].update_animation(delta_time)
-            return
+        
+        # Auto-start combat encounter
+        if self.encounter_start_timer > 0:
+            self.encounter_start_timer -= delta_time
+            if self.encounter_start_timer <= 0:
+                self.encounter.start_encounter()
+        
+        # Update combat encounter
+        self.encounter.update_encounter(delta_time)
+        self.encounter.update_final_message(delta_time)
 
         for bat in self.bats:
             offset_x = sin(self.dt * bat.freq_x + bat.phase_x) * 5
@@ -350,74 +649,12 @@ class BigPanel(BasePanel):
             new_y = min(max(new_y, self.bottom), self.top)
             bat.center_x, bat.center_y = new_x, new_y
 
+        # Handle attack animations
         if self.attacking:
             self._tick_attack_anim()
-        else:
-            if self.dt > 1.5:
-                self.act()
-                self.dt = 0.0
 
+        # Update knight animations
         self._sync_knight_gif_pos()
         if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
             self.k_gifs[self.k_state].update_animation(delta_time)
 
-    def act(self):
-        if self.k_lives <= 0:
-            self.k_state = SpriteState.DEAD
-        if self.d_lives <= 0:
-            self.d_state = SpriteState.DEAD
-        if self.k_state == SpriteState.DEAD or self.d_state == SpriteState.DEAD:
-            self._apply_knight_gif()
-            return
-        sprites = [self.knight, self.drake]
-        curr_sprite = sprites[self.curr]
-        curr_state = self.k_state if curr_sprite is self.knight else self.d_state
-        choices = [s for s in SpriteState if s not in (curr_state, SpriteState.DEAD)]
-        n_state = choice(choices) if choices else SpriteState.STANDBY
-        match n_state:
-            case SpriteState.STANDBY:
-                pass
-            case SpriteState.ATTACKING:
-                if curr_sprite is self.knight:
-                    self.d_lives = max(0, self.d_lives - self.s_strength)
-                    self.s_lives = max(0, self.s_lives - 1)
-                    self._start_attack_anim(
-                        self.knight, self.drake, stop_before=40.0, projectile=False
-                    )
-                    self.k_state = SpriteState.ATTACKING
-                    self._apply_knight_gif()
-                else:
-                    self.fireball.center_x, self.fireball.center_y = (
-                        self.drake.center_x,
-                        self.drake.center_y,
-                    )
-
-                    self.fireball.color = self.breath_color  # Use mode-specific breath color
-                    self.k_lives = max(0, self.k_lives - 1)
-                    self._start_attack_anim(self.fireball, self.knight, projectile=True)
-                    self.d_state = SpriteState.ATTACKING
-            case SpriteState.DEFENDING:
-                if random() > 0.33:
-                    if curr_sprite is self.knight:
-                        self.k_lives = max(0, self.k_lives - 1)
-                    else:
-                        self.d_lives = max(0, self.d_lives - 1)
-                if curr_sprite is self.knight:
-                    self.k_state = SpriteState.DEFENDING
-                    self._apply_knight_gif()
-            case SpriteState.FLEEING:
-                step = 25
-                if curr_sprite is self.knight:
-                    self.knight.center_x -= step
-                    self.k_state = SpriteState.FLEEING
-                    self._apply_knight_gif()
-                else:
-                    self.drake.center_x += step
-            case _:
-                pass
-        if n_state != SpriteState.ATTACKING and curr_sprite is self.knight:
-            self.k_state = n_state
-            self._apply_knight_gif()
-        elif n_state != SpriteState.ATTACKING and curr_sprite is self.drake:
-            self.d_state = n_state
-        self.curr ^= 1

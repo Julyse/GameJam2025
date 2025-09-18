@@ -14,8 +14,6 @@ class GameController(arcade.View):
         super().__init__()
         self.panels = panels
         self.state = GameState.GAME
-        
-
 
     def on_show_view(self):
         arcade.set_background_color(arcade.color.DARK_SLATE_GRAY)
@@ -39,20 +37,19 @@ class GameController(arcade.View):
             if hasattr(p, "on_key_release"):
                 p.on_key_release(key, modifiers)
 
-    def start_game(self):
-        self.controller = GameController.start_game(self)
     def on_key_press(self, key, modifiers):
         for p in self.panels:
             if hasattr(p, "on_key_press"):
                 p.on_key_press(key, modifiers)
 
-        if key == arcade.key.C: 
-            print("Craft une épée")
-            self.sword_panel.game.add_sword()
+        # if key == arcade.key.C: 
+        #     print("Craft une épée")
+        #     self.sword_panel.game.add_sword()
 
-        if key == arcade.key.U: 
-            print("Utilise une épée")
-            self.sword_panel.game.remove_sword()
+        # if key == arcade.key.U: 
+        #     print("Utilise une épée")
+        #     self.sword_panel.game.remove_sword()
+
     @staticmethod
     def start_game(window: arcade.Window):
         panels, sword_panel = build_default_panels()
@@ -63,15 +60,19 @@ class GameController(arcade.View):
 
 def build_default_panels() -> list[BasePanel]:
     panels: list[BasePanel] = []
-    panels.append(BigPanel(x=0, y=BOTTOM_HEIGHT, width=SCREEN_WIDTH, height=SCREEN_HEIGHT - BOTTOM_HEIGHT, combat_mode=DragonState.NORMAL))
+    big_panel = BigPanel(x=0, y=BOTTOM_HEIGHT, width=SCREEN_WIDTH, height=SCREEN_HEIGHT - BOTTOM_HEIGHT, combat_mode=DragonState.NORMAL)
+    panels.append(big_panel)
     w1 = int(SCREEN_WIDTH * 0.25)
     w2 = int(SCREEN_WIDTH * 0.45)
     w3 = SCREEN_WIDTH - (w1 + w2)
     x_cursor = 0
     panels.append(SmallPanel1(x=x_cursor, y=0, width=w1, height=BOTTOM_HEIGHT))
     x_cursor += w1
-    panels.append(SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT))
+    sp2 = SmallPanel2(x=x_cursor, y=0, width=w2, height=BOTTOM_HEIGHT, big_panel_ref=big_panel, mode=DragonState.NORMAL)
+    panels.append(sp2)
     x_cursor += w2
     sword_panel = SmallPanel3(x=x_cursor, y=0, width=w3, height=BOTTOM_HEIGHT)
     panels.append(sword_panel)
+    sp2.sword_panel_ref = sword_panel
+    big_panel.sword_panel_ref = sword_panel
     return panels, sword_panel
