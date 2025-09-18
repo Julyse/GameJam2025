@@ -13,7 +13,7 @@ class SmallPanel3(BasePanel):
         return self.game.add_sword()
 
     def remove_sword(self, sprite=None, index=None):
-        return self.game.remove_sword(sprite, index)
+        return self.game.remove_sword(sprite=sprite, index=index)
 
     def remove_all_swords(self):
         self.game.remove_all_swords()

@@ -14,6 +14,6 @@ def main():
     arcade.load_font("ressources/fonts/Righteous.ttf")
     GameWindow()
     arcade.run()
-
+ 
 if __name__ == "__main__":
     main()

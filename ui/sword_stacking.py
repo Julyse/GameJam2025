@@ -1,3 +1,4 @@
+from sys import platform
 import arcade
 import pymunk
 import math
@@ -7,12 +8,17 @@ import audio_controller
 from PIL import Image
 import io
 
-UPSCALE = 3.5  
+UPSCALE = 4.5
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
-sounds = ["grab_sword.wav", "craft_sword.wav"]
+
+if platform == "darwin":
+    sounds = ["broke_sword.wav", "craft_sword_fixed.wav"]
+
+else:
+    sounds = ["broke_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -46,7 +52,7 @@ class SwordStacking:
         self.audio = audio_controller.SoundController()
         self.load_sounds()
 
-        # Sword images
+        # load sword images
         self.sword_files = [
             os.path.join(SWORD_FOLDER, f)
             for f in os.listdir(SWORD_FOLDER)
@@ -60,10 +66,9 @@ class SwordStacking:
         if os.path.exists(background_path):
             self.background = arcade.load_texture(background_path)  
         else:
-            print(f"Background image not found at {background_path}")
+            #print(f"Background image not found at {background_path}")
             None
 
-        # Create boundaries
         self._create_boundaries()
 
     def load_sounds(self):
@@ -75,12 +80,11 @@ class SwordStacking:
     def add_sword(self):
         mass = 1.0
         width, height = 32 * UPSCALE, 8 * UPSCALE
-
-        # Random position
+       
         x = random.randint(40, self.width - 40)
         y = random.randint(self.height // 2, self.height - 20)
 
-        # Random angle
+        # Random drop angle
         angle = random.uniform(0, 2 * math.pi)
 
         # Physics body
@@ -108,24 +112,41 @@ class SwordStacking:
         self.audio.play("craft_sword", volume=0.5)
         return sprite
 
-    def remove_sword(self):
-        """Remove the first sword from the game"""
+    def remove_sword(self, sprite=None, index=None):
+        """Remove a sword from the game.
+
+        If a sprite is provided, remove that sprite. If an index is provided,
+        remove the sword at that index. Otherwise, remove the most recently
+        added sword (top of the stack).
+        """
         if len(self.sprite_list) == 0:
-            print("No swords to remove")
+            #print("No swords to remove")
             return False
-        
-        # Get the first sword
-        sprite = self.sprite_list[0]
-        
-        # Remove from physics space (both shape and body)
-        self.space.remove(sprite.pymunk_shape.body, sprite.pymunk_shape)
-        
+
+        target_sprite = None
+        if sprite is not None and sprite in self.sprite_list:
+            target_sprite = sprite
+        elif index is not None and 0 <= index < len(self.sprite_list):
+            target_sprite = self.sprite_list[index]
+        else:
+            # Default: remove last (most recently added)
+            target_sprite = self.sprite_list[-1]
+
+        # Remove from physics space (shape then body)
+        try:
+            self.space.remove(target_sprite.pymunk_shape, target_sprite.pymunk_shape.body)
+        except Exception:
+            pass
+
         # Remove from sprite list
-        sprite.remove_from_sprite_lists()
-        
+        target_sprite.remove_from_sprite_lists()
+
         # Play sound
-        self.audio.play("grab_sword", volume=1.0)
-        print("Removed first sword")
+        try:
+            self.audio.play("broke_sword", volume=1.0)
+        except Exception:
+            pass
+        #print("Removed sword")
         return True
 
     def remove_all_swords(self):
