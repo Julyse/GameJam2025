@@ -264,7 +264,15 @@ class CombatEncounter:
         # Clear any remaining attacks
         if self.panel.attacking:
             self.panel._end_attack_anim()
-            
+        
+        # Stop minigames (SmallPanel2) when combat ends
+        try:
+            ref = getattr(self.panel, "minigames_panel_ref", None)
+            if ref and hasattr(ref, "disable_minigames"):
+                ref.disable_minigames()
+        except Exception:
+            pass
+        
         # Start final message timer
         self.final_message_timer = 0.0
         
