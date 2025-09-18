@@ -29,3 +29,6 @@ class SoundController:
             if playback:
                 playback.stop()
         self.current_playbacks.clear()
+    def load_and_loop_music(self, name: str, file_path: str, volume: float = 1.0):
+        self.load_sound(name, file_path, streaming=True) 
+        self.play(name, volume=volume, loop=True)

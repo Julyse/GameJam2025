@@ -15,10 +15,10 @@ SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
 
 if platform == "darwin":
-    sounds = ["broke_sword.wav", "craft_sword_fixed.wav"]
+    sounds = ["broke_sword.wav", "craft_sword_fixed.wav","music.mp3"]
 
 else:
-    sounds = ["broke_sword.wav", "craft_sword.wav"]
+    sounds = ["broke_sword.wav", "craft_sword.wav","music.mp3"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -70,6 +70,7 @@ class SwordStacking:
             None
 
         self._create_boundaries()
+        self.audio.load_and_loop_music("background", r"ressources\audio\music.mp3", volume=0.5)
 
     def load_sounds(self):
         for file in sounds:
