@@ -45,8 +45,11 @@ class CombatEncounter:
         
     def reset(self):
         """Reset encounter state"""
-        self.dragon_hp = 60  # Dragon needs 20 hits to die
-        self.hero_hp = 50    # Hero dies after 10 dragon hits
+        self.dragon_hp = 40
+        self.hero_hp = 20
+        # Max HP used for UI scaling
+        self.max_dragon_hp = self.dragon_hp
+        self.max_hero_hp = self.hero_hp
         self.running = False
         self.finished = False
         self.result = None  # "victory", "defeat", or None
@@ -56,7 +59,7 @@ class CombatEncounter:
         
         # Random scheduler (no fixed queue)
         self.action_timer = 0.0
-        self.action_interval = 0.8  # Base interval between actions
+        self.action_interval = 1.2  
         self.current_action = None
         self.action_in_progress = False
         self.final_message_timer = 0.0
@@ -130,9 +133,10 @@ class CombatEncounter:
         self.current_action = ActionType.DRAGON_ATTACK if next_actor == "dragon" else ActionType.HERO_ATTACK
         self.action_in_progress = True
         self.action_timer = 0.0
-        
-        # Add jitter to next interval
-        self.action_interval = uniform(0.65, 0.95)
+        if self.current_action == ActionType.DRAGON_ATTACK:
+            self.action_interval = uniform(2.6, 3.2)
+        else:
+            self.action_interval = uniform(1.1, 1.7)
         
        # print(f"🎲 Next action: {self.current_action.value}")
         
@@ -283,28 +287,10 @@ class CombatEncounter:
                 
     def draw_hud(self, panel):
         """Draw HP bars and combat info"""
-        # Sword inventory (show count from SwordStacking if available)
-        hp_y = panel.bottom + panel.height - 40
-        sword_count = None
-        try:
-            if hasattr(panel, "sword_panel_ref") and panel.sword_panel_ref and hasattr(panel.sword_panel_ref, "game"):
-                stack = panel.sword_panel_ref.game
-                sword_count = stack.get_sword_count() if hasattr(stack, "get_sword_count") else len(getattr(stack, "sprite_list", []))
-        except Exception:
-            sword_count = None
-        if sword_count is None:
-            sword_count = len(self.sword_inventory)
-        sword_text = f"Swords: {sword_count}"
-        draw_text(sword_text, panel.left + 400, hp_y,
-                 color.YELLOW, 16, font_name=("Righteous", "arial", "calibri"))
         
-        # Combat status
-        if self.running and not self.finished:
-            status_text = "Combat in progress"
-            if self.current_action:
-                status_text += f" - {self.current_action.value}"
-            draw_text(status_text, panel.left + 20, hp_y - 25,
-                     color.GRAY, 14, font_name=("Righteous", "arial", "calibri"))
+        # Texte des épées masqué à la demande
+
+        # Texte d'état de combat masqué à la demande
                      
     def draw_final_messages(self, panel):
         """Draw victory/defeat messages"""
@@ -476,6 +462,7 @@ class BigPanel(BasePanel):
         self.explosions, self.spawn_explosion, self.update_explosions, self.draw_explosions = create_explosion_system(
             Path(__file__).parent.parent / "resources" / "Explosion" / "X_plosion" / "PNG",
             frame_step=2,
+            default_scale=2.3,
         )
         # Nombre d'étapes pour le déplacement des projectiles (plus grand = plus lent)
         self.fireball_steps = 24
@@ -522,9 +509,13 @@ class BigPanel(BasePanel):
             from arcade import draw_lrbt_rectangle_filled
             draw_lrbt_rectangle_filled(self.left, self.right, self.bottom, self.top, self.bg_tint)
         
-        # Mise à jour des barres de vie basée sur le système de combat
-        k_index = int((self.encounter.hero_hp / 10) * (len(self.k_healthbar.textures) - 1))
-        d_index = int((self.encounter.dragon_hp / 20) * (len(self.d_healthbar.textures) - 1))
+        # Mise à jour des barres de vie basée sur le système de combat (ratio actuel / max)
+        k_ratio = (self.encounter.hero_hp / max(1, self.encounter.max_hero_hp)) if hasattr(self.encounter, 'max_hero_hp') else 1.0
+        d_ratio = (self.encounter.dragon_hp / max(1, self.encounter.max_dragon_hp)) if hasattr(self.encounter, 'max_dragon_hp') else 1.0
+        # Utiliser un arrondi vers le haut pour éviter une barre vide lorsque les PV > 0
+        from math import ceil
+        k_index = int(ceil(k_ratio * (len(self.k_healthbar.textures) - 1))) if k_ratio > 0 else 0
+        d_index = int(ceil(d_ratio * (len(self.d_healthbar.textures) - 1))) if d_ratio > 0 else 0
         k_index = max(0, min(k_index, len(self.k_healthbar.textures) - 1))
         d_index = max(0, min(d_index, len(self.d_healthbar.textures) - 1))
         self.k_healthbar.set_texture(k_index)
@@ -609,15 +600,7 @@ class BigPanel(BasePanel):
         self._attack_is_projectile = projectile
 
     def _end_attack_anim(self) -> None:
-        # Pour les projectiles, on capture la dernière position avant tout reset
-        last_fx = None
-        last_fy = None
-        if self._attack_is_projectile and self.attack_actor is not None:
-            last_fx = self.attack_actor.center_x
-            last_fy = self.attack_actor.center_y
-        if self._attack_is_projectile and last_fx is not None and last_fy is not None:
-            # Explosion au point d'impact (dernière position atteinte)
-            self.spawn_explosion(last_fx, last_fy)
+        # L'explosion est gérée dans _on_projectile_hit
         if self.attack_actor and self.attack_actor_start:
             self.attack_actor.center_x, self.attack_actor.center_y = (
                 self.attack_actor_start
@@ -632,10 +615,19 @@ class BigPanel(BasePanel):
         self._attack_is_projectile = False
         self.attack_actor = None
         self.attack_actor_start = None
-        if self.k_lives > 0:
-            self.k_state = SpriteState.STANDBY
-        if self.d_lives > 0:
-            self.d_state = SpriteState.STANDBY
+        # Ne pas repasser à STANDBY si le personnage est mort dans l'Encounter
+        try:
+            if getattr(self, 'encounter', None):
+                if self.encounter.hero_hp > 0:
+                    self.k_state = SpriteState.STANDBY
+                if self.encounter.dragon_hp > 0:
+                    self.d_state = SpriteState.STANDBY
+        except Exception:
+            # Fallback sur l'ancienne logique si jamais l'encounter n'est pas disponible
+            if self.k_lives > 0:
+                self.k_state = SpriteState.STANDBY
+            if self.d_lives > 0:
+                self.d_state = SpriteState.STANDBY
         self._apply_knight_gif()
 
     def _tick_attack_anim(self) -> None:
@@ -687,6 +679,8 @@ class BigPanel(BasePanel):
 
         # Update knight animations
         self._sync_knight_gif_pos()
-        if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
-            self.k_gifs[self.k_state].update_animation(delta_time)
+        # Ne pas forcer de mise à jour d'animation continue sur l'état DEATH pour éviter une boucle gênante
+        if self.k_state != SpriteState.DEAD:
+            if self.k_state in self.k_gifs and self.k_gifs[self.k_state].visible:
+                self.k_gifs[self.k_state].update_animation(delta_time)
 

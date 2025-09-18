@@ -14,14 +14,14 @@ REF_HEIGHT = 720
 #  Y'a toutes les Constantes du jeu au début si tu veux changer fait le ici ---------- 
 BIRD_X        = REF_WIDTH * 0.25
 BIRD_SIZE     = 35
-GRAVITY       = 1200
-FLAP_STRENGTH = 400
+GRAVITY       = 2400
+FLAP_STRENGTH = 700
 
 PIPE_WIDTH         = 100
 GAP_HEIGHT         = 230
-PIPE_SPEED         = 250
-PIPE_INTERVAL      = 1.6
-PIPE_VERTICAL_SPEED = 30
+PIPE_SPEED         = 320
+PIPE_INTERVAL      = 1.2
+PIPE_VERTICAL_SPEED = 45
 
 FONT_SIZE = 36
 
@@ -70,8 +70,20 @@ class FlappyGame:
             case DragonState.ICE:
                 self.background = arcade.load_texture(str(RESOURCE_PATH / "bg_ice.png"))
 
-        # vitesse ajustée
-        self.pipe_speed   = PIPE_SPEED * (2.5 if mode == DragonState.FIRE else 1)
+        # vitesse ajustée par mode
+        if mode == DragonState.FIRE:
+            self.pipe_speed = PIPE_SPEED * 3.0
+        elif mode == DragonState.NORMAL:
+            self.pipe_speed = PIPE_SPEED * 1.0
+        else:  # DragonState.ICE
+            self.pipe_speed = PIPE_SPEED * 1.0
+
+        # cadence de spawn des tuyaux par mode
+        self.pipe_interval = 0.9 if mode == DragonState.FIRE else PIPE_INTERVAL
+
+        # vitesse verticale des tuyaux mobiles (utilisé seulement en ICE)
+        self.pipe_vertical_speed = PIPE_VERTICAL_SPEED * (1.5 if mode == DragonState.ICE else 1.0)
+
         # ajustement physique à l'échelle du panel
         self.gravity       = GRAVITY * self.scale
         self.flap_strength = FLAP_STRENGTH * self.scale
@@ -106,12 +118,12 @@ class FlappyGame:
 
         # spawn
         self.time_since_last_pipe += dt
-        if self.time_since_last_pipe >= PIPE_INTERVAL:
+        if self.time_since_last_pipe >= self.pipe_interval:
             self._spawn_pipe(); self.time_since_last_pipe = 0
 
         # collision / victoire
         if self._check_collision(): self._end_game()
-        if self.score >= 12: self._win_game()
+        if self.score >= 8: self._win_game()
 
     # ----------------------- rendu -----------------------
     def draw(self, *, offset_x: float = 0, offset_y: float = 0):
@@ -177,7 +189,7 @@ class FlappyGame:
     def _spawn_pipe(self):
         margin = 60
         gap_center = random.randint(margin+GAP_HEIGHT//2, REF_HEIGHT-margin-GAP_HEIGHT//2)
-        vel = PIPE_VERTICAL_SPEED if self.moving_pipes else 0
+        vel = self.pipe_vertical_speed if self.moving_pipes else 0
         self.pipes.append({"x": REF_WIDTH+PIPE_WIDTH/2, "gap_y": gap_center,
                             "vel_y": vel, "scored": False})
 

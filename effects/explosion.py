@@ -20,7 +20,8 @@ def create_explosion_system(
     explosions_dir: Path,
     *,
     frame_step: int = 1,
-) -> tuple[SpriteList, Callable[[float, float], None], Callable[[float], None], Callable[[], None]]:
+    default_scale: float = 1.0,
+) -> tuple[SpriteList, Callable[[float, float, float | None], None], Callable[[float], None], Callable[[], None]]:
     """
     Crée un système d'explosions basé sur une SpriteList et une animation image-par-image.
 
@@ -57,12 +58,13 @@ def create_explosion_system(
                     return
                 self.texture = self._frames[self._frame_index]
 
-    def spawn(x: float, y: float) -> None:
+    def spawn(x: float, y: float, scale: float | None = None) -> None:
         # Si aucune texture n'est disponible, ne rien faire (évite TypeError)
         if not textures:
             return
         exp = Explosion(textures)
         exp.center_x, exp.center_y = x, y
+        exp.scale = float(scale) if scale is not None else float(default_scale)
         sprite_list.append(exp)
 
     def update(dt: float) -> None:
