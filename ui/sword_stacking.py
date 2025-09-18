@@ -70,7 +70,7 @@ class SwordStacking:
             None
 
         self._create_boundaries()
-        self.audio.load_and_loop_music("background", r"ressources\audio\music.mp3", volume=0.5)
+        self.audio.load_and_loop_music("background", r"ressources\audio\music.mp3", volume=0.3)
 
     def load_sounds(self):
         for file in sounds:
