@@ -47,7 +47,7 @@ class MenuView(arcade.View):
 
         # @options_button.event("on_click")
         # def on_click_options(event):
-        #     print("Options…")
+        #     #print("Options…")
 
         anchor = arcade.gui.widgets.layout.UIAnchorLayout()
         anchor.add(child=v_box, anchor_x="center_x", anchor_y="center_y")

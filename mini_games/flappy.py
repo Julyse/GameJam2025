@@ -230,4 +230,4 @@ class FlappyGame:
             if self.on_finish is not None:
                 self.on_finish(status)
         except Exception as exc:
-            print(f"Error in Flappy on_finish callback: {exc}")
+            #print(f"Error in Flappy on_finish callback: {exc}")

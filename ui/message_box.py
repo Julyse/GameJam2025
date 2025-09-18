@@ -44,7 +44,7 @@ class MessageBox:
         self.font_size = font_size
         # Gestion de la font
         resolved_font_path = os.path.join("ressources", "fonts", f"{font_name}.ttf")
-        print(os.path.isfile(resolved_font_path))
+        #print(os.path.isfile(resolved_font_path))
         if resolved_font_path and os.path.isfile(resolved_font_path):
             try:
                 arcade.load_font(resolved_font_path)

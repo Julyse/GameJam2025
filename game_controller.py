@@ -4,10 +4,12 @@ from panels import BigPanel, SmallPanel1, SmallPanel2, SmallPanel3
 from enums.game_state import GameState
 from enums.dragon_state import DragonState
 
+
 SCREEN_WIDTH  = 1280
 SCREEN_HEIGHT = 720
 BOTTOM_HEIGHT = 260
 NUM_SMALL = 3
+
 
 class GameController(arcade.View):
     def __init__(self, panels: list[BasePanel]):
