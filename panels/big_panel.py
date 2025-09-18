@@ -269,16 +269,10 @@ class CombatEncounter:
                 
     def draw_hud(self, panel):
         """Draw HP bars and combat info"""
-        hp_y = panel.bottom + panel.height - 40
+        
         # Texte des épées masqué à la demande
 
-        # Combat status
-        if self.running and not self.finished:
-            status_text = "Combat in progress"
-            if self.current_action:
-                status_text += f" - {self.current_action.value}"
-            draw_text(status_text, panel.left + 20, hp_y - 25,
-                     color.GRAY, 14, font_name=("Righteous", "arial", "calibri"))
+        # Texte d'état de combat masqué à la demande
                      
     def draw_final_messages(self, panel):
         """Draw victory/defeat messages"""
