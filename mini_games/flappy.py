@@ -11,7 +11,7 @@ from enums.minigames_status import GameStatus
 REF_WIDTH  = 1280
 REF_HEIGHT = 720
 
-#  Y'a toutes les Constantes du jeu au début si tu veux changer fait le ici ----------
+#  Y'a toutes les Constantes du jeu au début si tu veux changer fait le ici ---------- 
 BIRD_X        = REF_WIDTH * 0.25
 BIRD_SIZE     = 35
 GRAVITY       = 1200
@@ -34,7 +34,7 @@ PALETTES = {
 class FlappyGame:
     """Mini-jeu Flappy Bird intégrable dans un panneau Arcade."""
 
-    def __init__(self, width: int, height: int, *, mode: DragonState = DragonState.NORMAL, on_finish: Optional[Callable[[GameStatus], None]] = None):
+    def __init__(self, width: int, height: int, mode: DragonState = DragonState.NORMAL, on_finish: Optional[Callable[[GameStatus], None]] = None):
         # dimensions du panel hôte
         self.panel_w = width
         self.panel_h = height

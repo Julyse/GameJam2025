@@ -1,4 +1,5 @@
 from .base_panel import BasePanel
+from itertools import cycle
 from arcade import (
     Sprite,
     SpriteList,
@@ -12,6 +13,7 @@ from arcade import (
 from math import cos, pi, sin
 from random import random, gauss, uniform, choice, shuffle
 from enum import Enum
+from enums import dragon_state
 from numpy import linspace
 from pathlib import Path
 from effects import create_explosion_system
@@ -88,7 +90,7 @@ class CombatEncounter:
                 if self.sword_inventory[i] <= 0:
                     # Remove depleted sword
                     self.sword_inventory.pop(i)
-                    print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
+                    #print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
                     # Sync SwordStacking visual: remove one sword
                     try:
                         ref = getattr(self.panel, "sword_panel_ref", None)
@@ -128,7 +130,7 @@ class CombatEncounter:
         # Add jitter to next interval
         self.action_interval = uniform(0.65, 0.95)
         
-        print(f"🎲 Next action: {self.current_action.value}")
+       # print(f"🎲 Next action: {self.current_action.value}")
         
         if self.current_action == ActionType.DRAGON_ATTACK:
             self._begin_dragon_attack()
@@ -208,7 +210,7 @@ class CombatEncounter:
         
         # Damage hero
         self.hero_hp -= 1
-        print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/10")
+       # print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/10")
         
         # Check for hero death
         if self.hero_hp <= 0:
@@ -343,7 +345,9 @@ class BigPanel(BasePanel):
 
         super().__init__(x=x, y=y, width=width, height=height, color=color.BEIGE, label="")  # type: ignore
         
-        # Combat mode configuration
+        self.state_cycle= cycle(DragonState)
+        self.state_timer= 0.0 
+        self.state_interval= 15
         self.combat_mode = combat_mode
         self._setup_mode_visuals()
 
@@ -474,6 +478,7 @@ class BigPanel(BasePanel):
         # Auto-start combat after a brief delay
         self.encounter_start_timer = 2.0  # Start combat after 2 seconds
         # Reference to SwordStacking (SmallPanel3); set by controller
+        
         self.sword_panel_ref = None
     def _setup_mode_visuals(self):
         """Configure visual elements based on combat mode."""
@@ -487,7 +492,7 @@ class BigPanel(BasePanel):
             case DragonState.ICE:
                 self.breath_color = color.SKY_BLUE
                 self.bg_tint = (0, 100, 200, 40)  # Ice tint (blue)
-
+    
     def set_combat_mode(self, mode: DragonState):
         """Change combat mode without resetting fight state (HP, timers, etc.)"""
         self.combat_mode = mode
@@ -495,7 +500,7 @@ class BigPanel(BasePanel):
         # Update projectile color if it exists
         if hasattr(self, 'fireball') and self.fireball:
             self.fireball.color = self.breath_color
-
+        
     def on_draw(self) -> None:
         super().on_draw()
         draw_text("Arena", self.left + 20, self.bottom + 20, color.BLACK, font_name=("Righteous", "arial", "calibri"))
@@ -647,6 +652,14 @@ class BigPanel(BasePanel):
         # Update combat encounter
         self.encounter.update_encounter(delta_time)
         self.encounter.update_final_message(delta_time)
+        
+        self.state_timer += delta_time 
+        if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
+            self.state_timer = 0 
+            self.set_combat_mode(next(self.state_cycle))
+            print("Next state ", self.combat_mode)
+
+            
 
         for bat in self.bats:
             offset_x = sin(self.dt * bat.freq_x + bat.phase_x) * 5
