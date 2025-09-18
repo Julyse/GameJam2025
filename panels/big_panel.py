@@ -67,8 +67,8 @@ class CombatEncounter:
         self.final_message_delay = 1.0
         
         # Scheduler probabilities
-        self.p_dragon = 0.55
-        self.p_hero = 0.45
+        self.p_dragon = 0.42
+        self.p_hero = 0.58
         
     def start_encounter(self):
         """Initialize and start the combat sequence"""
@@ -135,9 +135,9 @@ class CombatEncounter:
         self.action_in_progress = True
         self.action_timer = 0.0
         if self.current_action == ActionType.DRAGON_ATTACK:
-            self.action_interval = uniform(1.8, 2.6)
+            self.action_interval = uniform(3, 4)
         else:
-            self.action_interval = uniform(1.1, 1.7)
+            self.action_interval = uniform(1.5, 2)
         
        # print(f"🎲 Next action: {self.current_action.value}")
         
