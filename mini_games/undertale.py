@@ -1,12 +1,13 @@
 import arcade
 import os
+import random
 from typing import Callable, Optional
 from enums.dragon_state import DragonState
 from enums.minigames_status import GameStatus
 
 DEBUG_SHOW_HITBOX = False
 INVICIBILITY_TILE = 1.5 # IN SECONDS
-MOVEMENT_SPEED = 6
+MOVEMENT_SPEED = 4
 HITBOX_HEIGHT = 5
 HITBOX_WIDTH = 5
 
@@ -113,8 +114,8 @@ class Undertale:
                 self.base_scroll_speed_x = -2
                 self.base_scroll_speed_y = 0
             case DragonState.ICE:
-                self.base_scroll_speed_x = -1
-                self.base_scroll_speed_y = -1
+                self.base_scroll_speed_x = -0.8
+                self.base_scroll_speed_y = 0
 
         # Current active scroll speed — we start frozen until player presses a key
         self.scroll_speed_x = 0
@@ -153,7 +154,11 @@ class Undertale:
         self.hitbox_list = arcade.SpriteList()
         self.hitbox_list.append(self.player_hitbox)
 
-        level_data = self.load_text_file("map_normal_0")
+        # Pick a random map among map_0 / map_1 / map_2 that actually exists
+        candidates = ["map_0", "map_1", "map_2"]
+        available = [n for n in candidates if os.path.exists(os.path.join(RESOURCE_PATH, n))]
+        chosen_map = random.choice(available) if available else "map_0"
+        level_data = self.load_text_file(chosen_map)
         level_grid = self.load_level_as_grid(level_data)
 
         self.wall_list = arcade.SpriteList(use_spatial_hash=True)
@@ -299,15 +304,9 @@ class Undertale:
         if self.finished:
             return
 
-        # If the player hasn't pressed a movement key yet, do not run the gameplay loop.
-        # Still allow drawing to show the static screen; no walls move, no collisions processed.
         if not self.started:
-            # still update player sprite position if you want to allow immediate camera/player response:
-            # self.player_list.update(self.screen_width, self.screen_height, delta_time)
-            # but typically before start we want player frozen, so just return.
             return
 
-        # --- rest of your existing update logic unchanged ---
         self.player_list.update(self.screen_width, self.screen_height, delta_time)
         self.player_hitbox.center_x = self.player_sprite.center_x
         self.player_hitbox.center_y = self.player_sprite.center_y
@@ -321,12 +320,9 @@ class Undertale:
             wall.center_x += self.scroll_speed_x
             wall.center_y += self.scroll_speed_y
             
-            # Supprimer les murs dès qu'ils sont complètement sortis du panel à gauche
-            # Avec une marge négative pour être sûr qu'ils sont bien sortis
             if wall.right < 35:  # Marge de 5 pixels pour être sûr
                 walls_to_remove.append(wall)
         
-        # Supprimer les murs qui sont sortis du panel
         for wall in walls_to_remove:
             self.wall_list.remove(wall)
 
@@ -393,38 +389,7 @@ def change_scroll_direction(self, dx: float, dy: float):
     self.scroll_dx = dx
     self.scroll_dy = dy
 
-#self.change_scroll_direction(0, 2)
-
-# def main():
-#     """ Main function """
-#     window = MyGame(self.screen_width, self.screen_height, SCREEN_TITLE, DragonState.FIRE)
-#     window.setup()
-#     arcade.run()
 
 if __name__ == "__main__":
     main()
     
-# Mod shift space
-
-# source venv/bin/activate
-
-# ajuster hitbox, mettre tout les paramètres en constante
-
-# charger map aléatoire
-# créer des maps
-# charger sprite
-
-# coeur qui clignote
-# hp
-# 3 mode
-# - normal
-# - feu : plus rapide et hitbox enflamé donc plus grosse
-# - glace : inverse sens souvent
-# assets
-
-# enum for gamemode
-# implementer à main menu
-
-# reafacor
-
-# ENUM A RETURN WITH GAME STATUS {LOST / WIN}
