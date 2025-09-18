@@ -108,13 +108,13 @@ class Undertale:
         # compute the base scroll speeds according to gamemode, but DO NOT start scrolling yet
         match gamemode:
             case DragonState.NORMAL:
-                self.base_scroll_speed_x = -1
+                self.base_scroll_speed_x = -1.5
                 self.base_scroll_speed_y = 0
             case DragonState.FIRE:
-                self.base_scroll_speed_x = -2
+                self.base_scroll_speed_x = -2.5
                 self.base_scroll_speed_y = 0
             case DragonState.ICE:
-                self.base_scroll_speed_x = -0.8
+                self.base_scroll_speed_x = -1
                 self.base_scroll_speed_y = 0
 
         # Current active scroll speed — we start frozen until player presses a key
@@ -240,7 +240,7 @@ class Undertale:
             hitbox.center_x, hitbox.center_y = hitbox_positions[i]
 
         if not self.started:
-            text = "Appuyer sur Z/Q/S/D ou les flèches directionnels"
+            text = "Appuyez sur Z/Q/S/D ou les flèches directionnels"
             arcade.draw_text(
                 text,
                 self.screen_width / 2 + offset_x,  # X center

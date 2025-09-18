@@ -74,8 +74,8 @@ class CombatEncounter:
         self.final_message_delay = 1.0
         
         # Scheduler probabilities
-        self.p_dragon = 0.55
-        self.p_hero = 0.45
+        self.p_dragon = 0.42
+        self.p_hero = 0.58
         
     def start_encounter(self):
         """Initialize and start the combat sequence"""
@@ -142,9 +142,9 @@ class CombatEncounter:
         self.action_in_progress = True
         self.action_timer = 0.0
         if self.current_action == ActionType.DRAGON_ATTACK:
-            self.action_interval = uniform(1.8, 2.6)
+            self.action_interval = uniform(3, 4)
         else:
-            self.action_interval = uniform(1.1, 1.7)
+            self.action_interval = uniform(1.5, 2)
         
        # print(f"🎲 Next action: {self.current_action.value}")
         
@@ -490,6 +490,17 @@ class BigPanel(BasePanel):
         # Reference to SwordStacking (SmallPanel3); set by controller
         
         self.sword_panel_ref = None
+        # Control whether dragon state cycles based on a timer during minigames
+        # Set to False so state changes only when minigames end
+        self.use_time_based_mode = False
+
+    def advance_combat_mode(self):
+        """Advance dragon state to the next mode immediately."""
+        try:
+            self.set_combat_mode(next(self.state_cycle))
+            print("Next state ", self.combat_mode)
+        except Exception:
+            pass
     def _setup_mode_visuals(self):
         """Configure visual elements based on combat mode."""
         match self.combat_mode:
@@ -672,11 +683,12 @@ class BigPanel(BasePanel):
         self.encounter.update_encounter(delta_time)
         self.encounter.update_final_message(delta_time)
         
-        self.state_timer += delta_time 
-        if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
-            self.state_timer = 0 
-            self.set_combat_mode(next(self.state_cycle))
-            print("Next state ", self.combat_mode)
+        if self.use_time_based_mode:
+            self.state_timer += delta_time 
+            if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
+                self.state_timer = 0 
+                self.set_combat_mode(next(self.state_cycle))
+                print("Next state ", self.combat_mode)
 
             
 

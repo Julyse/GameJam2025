@@ -46,6 +46,12 @@ class SmallPanel2(BasePanel):
                 self.big_panel_ref.encounter.add_sword(1)
             if self.sword_panel_ref and hasattr(self.sword_panel_ref, 'add_sword'):
                 self.sword_panel_ref.add_sword()
+        # Advance dragon mode now that minigame is finished
+        try:
+            if self.big_panel_ref and hasattr(self.big_panel_ref, 'advance_combat_mode'):
+                self.big_panel_ref.advance_combat_mode()
+        except Exception:
+            pass
         # Immediately start next minigame; built-in prompts from each mini-game will show
         self.game = None
         self.last_result = None

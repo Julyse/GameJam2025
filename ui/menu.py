@@ -18,7 +18,7 @@ class MenuView(arcade.View):
         v_box = arcade.gui.widgets.layout.UIBoxLayout(space_between=20)
 
         title_label = arcade.gui.UILabel(
-            text="Le Faiseur d'epees",
+            text="Le Faiseur d'Epees",
             width=450,
             height=40,
             font_size=28,
