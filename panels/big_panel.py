@@ -518,7 +518,7 @@ class BigPanel(BasePanel):
                 self.bg_tint = (0, 100, 200, 40)  # Ice tint (blue)
 
     def on_key_press(self, symbol: int, modifiers: int):
-        if symbol == key.ESCAPE and "defeat" in str(self.encounter.result):
+        if symbol == key.ESCAPE and "defeat" or "defeat_victory" in str(self.encounter.result):
             execl(executable, executable, * argv)
 
     def set_combat_mode(self, mode: DragonState):
