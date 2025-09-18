@@ -89,6 +89,14 @@ class CombatEncounter:
                     # Remove depleted sword
                     self.sword_inventory.pop(i)
                     print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
+                    # Sync SwordStacking visual: remove one sword
+                    try:
+                        ref = getattr(self.panel, "sword_panel_ref", None)
+                        game = getattr(ref, "game", None) if ref else None
+                        if game and hasattr(game, "remove_sword"):
+                            game.remove_sword()
+                    except Exception:
+                        pass
                 return True
         return False
         
