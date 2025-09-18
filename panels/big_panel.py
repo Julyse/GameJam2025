@@ -46,7 +46,7 @@ class CombatEncounter:
     def reset(self):
         """Reset encounter state"""
         self.dragon_hp = 40
-        self.hero_hp = 20
+        self.hero_hp = 40
         # Max HP used for UI scaling
         self.max_dragon_hp = self.dragon_hp
         self.max_hero_hp = self.hero_hp
@@ -134,7 +134,7 @@ class CombatEncounter:
         self.action_in_progress = True
         self.action_timer = 0.0
         if self.current_action == ActionType.DRAGON_ATTACK:
-            self.action_interval = uniform(2.6, 3.2)
+            self.action_interval = uniform(1.8, 2.6)
         else:
             self.action_interval = uniform(1.1, 1.7)
         
@@ -218,7 +218,7 @@ class CombatEncounter:
         
         # Damage hero
         self.hero_hp -= 1
-       # print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/10")
+        print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/{self.max_hero_hp}")
         
         # Check for hero death
         if self.hero_hp <= 0:
@@ -233,7 +233,7 @@ class CombatEncounter:
             
         # Damage dragon
         self.dragon_hp -= 1
-        print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/20, Swords: {len(self.sword_inventory)}")
+        print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/{self.max_dragon_hp}, Swords: {len(self.sword_inventory)}")
         
         # Check for dragon death
         if self.dragon_hp <= 0:
