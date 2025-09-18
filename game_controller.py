@@ -26,11 +26,6 @@ class GameController(arcade.View):
     def on_update(self, delta_time: float):
         for p in self.panels:
             p.on_update(delta_time)
-
-    def on_key_press(self, key, modifiers):
-        for p in self.panels:
-            if hasattr(p, "on_key_press"):
-                p.on_key_press(key, modifiers)
                     
     def on_key_release(self, key, modifiers):
         for p in self.panels:
