@@ -342,7 +342,7 @@ class Undertale:
                 self.on_finish(status)
         except Exception as exc:
             # Avoid crashing the game loop due to callback errors
-            #print(f"Error in on_finish callback: {exc}")
+            print(f"Error in on_finish callback: {exc}")
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
