@@ -15,10 +15,10 @@ SWORD_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "sprites", "swords")
 SOUND_FOLDER = os.path.join(SCRIPT_DIR, "..", "ressources", "audio")
 
 if platform == "darwin":
-    sounds = ["grab_sword.wav", "craft_sword_fixed.wav"]
+    sounds = ["broke_sword.wav", "craft_sword_fixed.wav"]
 
 else:
-    sounds = ["grab_sword.wav", "craft_sword.wav"]
+    sounds = ["broke_sword.wav", "craft_sword.wav"]
 
 
 class PhysicsSprite(arcade.Sprite):
@@ -145,7 +145,7 @@ class SwordStacking:
 
         # Play sound
         try:
-            self.audio.play("grab_sword", volume=1.0)
+            self.audio.play("broke_sword", volume=1.0)
         except Exception:
             pass
         print("Removed sword")
