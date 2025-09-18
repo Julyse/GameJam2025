@@ -31,6 +31,7 @@ class SpriteState(Enum):
     DEAD = 4
     FLEEING = 5
 
+SWORD_DURABILITY = 3
 
 class ActionType(Enum):
     DRAGON_ATTACK = "dragon_attack"
@@ -55,7 +56,7 @@ class CombatEncounter:
         self.result = None  # "victory", "defeat", or None
         
         # Sword inventory system
-        self.sword_inventory = [10]  # Start with 1 sword, durability 3
+        self.sword_inventory = [5]  # Start with 1 sword, durability 3
         
         # Random scheduler (no fixed queue)
         self.action_timer = 0.0
@@ -78,7 +79,7 @@ class CombatEncounter:
     def add_sword(self, count=1):
         """Add sword(s) to inventory - called by mini-games on success"""
         for _ in range(count):
-            self.sword_inventory.append(5)  # Each sword has 3 durability
+            self.sword_inventory.append(SWORD_DURABILITY)  # Each sword has 3 durability
         print(f"⚔️ Added {count} sword(s)! Total swords: {len(self.sword_inventory)}")
         
     def _has_usable_sword(self):
@@ -332,7 +333,7 @@ class CombatEncounter:
                      color.GREEN, 18, anchor_x="center", anchor_y="center",
                      font_name=("Righteous", "arial", "calibri"))
 
-        if "defeat" in str(self.result):
+        if "defeat" in str(self.result): # ADD DEFEAT SWORD!!
             draw_text("PRESS SPACE TO RESTART", center_x, center_y - 120,
                      color.RED, 20, anchor_x="center", anchor_y="center", font_name=("Righteous", "arial", "calibri"))
 class Character(Sprite):
