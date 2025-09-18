@@ -23,7 +23,7 @@ class BlacksmithUI:
         if os.path.exists(background_path):
             self.background = arcade.load_texture(background_path) 
         else :
-            print(f"Background image not found at {background_path}")
+            #print(f"Background image not found at {background_path}")
 
 
     def update(self, delta_time: float):

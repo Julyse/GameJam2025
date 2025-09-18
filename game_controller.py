@@ -4,10 +4,12 @@ from panels import BigPanel, SmallPanel1, SmallPanel2, SmallPanel3
 from enums.game_state import GameState
 from enums.dragon_state import DragonState
 
+
 SCREEN_WIDTH  = 1280
 SCREEN_HEIGHT = 720
 BOTTOM_HEIGHT = 260
 NUM_SMALL = 3
+
 
 class GameController(arcade.View):
     def __init__(self, panels: list[BasePanel]):
@@ -38,11 +40,11 @@ class GameController(arcade.View):
                 p.on_key_press(key, modifiers)
 
         # if key == arcade.key.C: 
-        #     print("Craft une épée")
+        #     #print("Craft une épée")
         #     self.sword_panel.game.add_sword()
 
         # if key == arcade.key.U: 
-        #     print("Utilise une épée")
+        #     #print("Utilise une épée")
         #     self.sword_panel.game.remove_sword()
 
     @staticmethod

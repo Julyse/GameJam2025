@@ -135,7 +135,7 @@ class Undertale:
         BASE_PATH = os.path.dirname(os.path.abspath(__file__))
         RESOURCE_PATH = os.path.join(BASE_PATH, "..", "resources", "undertale")
 
-        print('GAMEMODE IS :', self.gamemode)
+        #print('GAMEMODE IS :', self.gamemode)
         match self.gamemode:
             case DragonState.NORMAL:
                 self.background = arcade.load_texture(os.path.join(RESOURCE_PATH, "bg.png"))
@@ -272,7 +272,7 @@ class Undertale:
             self.finish(GameStatus.LOST)
 
         self.lifepoints -= 1
-        print(f"Player hit! Lifepoints: {self.lifepoints}")
+        #print(f"Player hit! Lifepoints: {self.lifepoints}")
 
         self.invincible = True
         self.invincibility_timer = INVICIBILITY_TILE
@@ -342,7 +342,7 @@ class Undertale:
                 self.on_finish(status)
         except Exception as exc:
             # Avoid crashing the game loop due to callback errors
-            print(f"Error in on_finish callback: {exc}")
+            #print(f"Error in on_finish callback: {exc}")
 
     def on_key_press(self, key, modifiers):
         """Called whenever a key is pressed. """
@@ -362,7 +362,7 @@ class Undertale:
             self.started = True
             self.scroll_speed_x = self.base_scroll_speed_x
             self.scroll_speed_y = self.base_scroll_speed_y
-            print("Game started (player pressed a movement key).")
+            #print("Game started (player pressed a movement key).")
 
         self.update_player_speed()
 

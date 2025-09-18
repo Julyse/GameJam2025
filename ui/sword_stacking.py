@@ -66,7 +66,7 @@ class SwordStacking:
         if os.path.exists(background_path):
             self.background = arcade.load_texture(background_path)  
         else:
-            print(f"Background image not found at {background_path}")
+            #print(f"Background image not found at {background_path}")
             None
 
         # Create boundaries
@@ -122,7 +122,7 @@ class SwordStacking:
         added sword (top of the stack).
         """
         if len(self.sprite_list) == 0:
-            print("No swords to remove")
+            #print("No swords to remove")
             return False
 
         target_sprite = None
@@ -148,7 +148,7 @@ class SwordStacking:
             self.audio.play("grab_sword", volume=1.0)
         except Exception:
             pass
-        print("Removed sword")
+        #print("Removed sword")
         return True
 
     def remove_all_swords(self):

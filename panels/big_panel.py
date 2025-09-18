@@ -74,13 +74,13 @@ class CombatEncounter:
         """Initialize and start the combat sequence"""
         self.reset()
         self.running = True
-        print(f"🎯 Combat started! Dragon HP: {self.dragon_hp}, Hero HP: {self.hero_hp}, Swords: {len(self.sword_inventory)}")
+        #print(f"🎯 Combat started! Dragon HP: {self.dragon_hp}, Hero HP: {self.hero_hp}, Swords: {len(self.sword_inventory)}")
         
     def add_sword(self, count=1):
         """Add sword(s) to inventory - called by mini-games on success"""
         for _ in range(count):
             self.sword_inventory.append(SWORD_DURABILITY)  # Each sword has 3 durability
-        print(f"⚔️ Added {count} sword(s)! Total swords: {len(self.sword_inventory)}")
+        #print(f"⚔️ Added {count} sword(s)! Total swords: {len(self.sword_inventory)}")
         
     def _has_usable_sword(self):
         """Check if hero has any sword with durability > 0"""
@@ -98,7 +98,7 @@ class CombatEncounter:
                 if self.sword_inventory[i] <= 0:
                     # Remove depleted sword
                     self.sword_inventory.pop(i)
-                    #print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
+                    ##print(f"💔 Sword broke! Remaining swords: {len(self.sword_inventory)}")
                     # Sync SwordStacking visual: remove one sword
                     try:
                         ref = getattr(self.panel, "sword_panel_ref", None)
@@ -139,7 +139,7 @@ class CombatEncounter:
         else:
             self.action_interval = uniform(1.5, 2)
         
-       # print(f"🎲 Next action: {self.current_action.value}")
+       # #print(f"🎲 Next action: {self.current_action.value}")
         
         if self.current_action == ActionType.DRAGON_ATTACK:
             self._begin_dragon_attack()
@@ -176,7 +176,7 @@ class CombatEncounter:
         """Start hero sword attack"""
         # Check if hero has usable sword
         if not self._has_usable_sword():
-            print("💥 Hero attack failed - no sword available!")
+            #print("💥 Hero attack failed - no sword available!")
             # Play failed attack animation or effect
             self.action_in_progress = False  # Skip this action
             return
@@ -219,7 +219,7 @@ class CombatEncounter:
         
         # Damage hero
         self.hero_hp -= 1
-        print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/{self.max_hero_hp}")
+        #print(f"🔥 Dragon hits hero! Hero HP: {self.hero_hp}/{self.max_hero_hp}")
         
         # Check for hero death
         if self.hero_hp <= 0:
@@ -229,19 +229,19 @@ class CombatEncounter:
         """Handle hero sword hitting dragon"""
         # Use sword durability
         if not self._use_sword():
-            print("💥 Hero attack failed - no sword durability!")
+            #print("💥 Hero attack failed - no sword durability!")
             return
             
         # Damage dragon
         self.dragon_hp -= 1
-        print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/{self.max_dragon_hp}, Swords: {len(self.sword_inventory)}")
+        #print(f"⚔️ Hero strikes dragon! Dragon HP: {self.dragon_hp}/{self.max_dragon_hp}, Swords: {len(self.sword_inventory)}")
         
         # Check for dragon death
         if self.dragon_hp <= 0:
             self._on_dragon_death()
         # Check if hero has no more swords and dragon still alive
         elif not self._has_usable_sword() and self.dragon_hp > 0:
-            print("💔 Hero has no more swords - defeat!")
+            #print("💔 Hero has no more swords - defeat!")
             self.panel.k_state = SpriteState.DEAD
             self.panel._apply_knight_gif()
             
@@ -249,7 +249,7 @@ class CombatEncounter:
 
     def _on_hero_death(self):
         """Handle hero death"""
-        print("💀 Hero has fallen!")
+        #print("💀 Hero has fallen!")
         
         # Set hero to dead state and keep on ground
         self.panel.k_state = SpriteState.DEAD
@@ -259,7 +259,7 @@ class CombatEncounter:
         
     def _on_dragon_death(self):
         """Handle dragon death"""
-        print("🏆 Dragon defeated!")
+        #print("🏆 Dragon defeated!")
         
         # Set dragon to defeated state
         self.panel.d_state = SpriteState.DEAD
@@ -491,7 +491,7 @@ class BigPanel(BasePanel):
         """Advance dragon state to the next mode immediately."""
         try:
             self.set_combat_mode(next(self.state_cycle))
-            print("Next state ", self.combat_mode)
+            #print("Next state ", self.combat_mode)
         except Exception:
             pass
     def _setup_mode_visuals(self):
@@ -681,7 +681,7 @@ class BigPanel(BasePanel):
             if self.state_timer >= self.state_interval : # cycle dragon state very state_interval seconds 
                 self.state_timer = 0 
                 self.set_combat_mode(next(self.state_cycle))
-                print("Next state ", self.combat_mode)
+                #print("Next state ", self.combat_mode)
 
             
 
